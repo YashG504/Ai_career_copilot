@@ -274,6 +274,70 @@ function getMockJobMatch() {
   };
 }
 
+// ─── AI Learning Center ────────────────────────────────────────────────────────
+
+export async function generateLearningPathAI(
+  goal: string,
+  level: string,
+  durationDays: number
+): Promise<any> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const prompt = `You are an expert technical mentor. Create a ${durationDays}-day learning roadmap for a ${level} developer aiming for this goal: "${goal}".
+
+Return a valid JSON object (no markdown, no code fences):
+{
+  "days": [
+    {
+      "dayNumber": 1,
+      "theme": "<Theme for the day>",
+      "tasks": [
+        { "title": "<Task title>", "description": "<Task description>" }
+      ],
+      "resources": [
+        { "title": "<Resource title>", "url": "<Resource URL or search query>", "type": "<video | article | course>" }
+      ]
+    }
+  ]
+}
+
+Ensure the array has exactly ${durationDays} items (one for each day).
+Make the progression logical from day 1 to day ${durationDays}.
+Include 2-3 tasks per day and 1-2 resources per day.`;
+
+  if (!apiKey) {
+    return getMockLearningPath(durationDays);
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Learning path error:', error);
+    return getMockLearningPath(durationDays);
+  }
+}
+
+function getMockLearningPath(duration: number) {
+  const days = [];
+  for (let i = 1; i <= duration; i++) {
+    days.push({
+      dayNumber: i,
+      theme: i % 7 === 0 ? 'Review and Rest' : `Core Concept ${i}`,
+      tasks: [
+        { title: 'Read documentation', description: "Review the official docs for today's concept." },
+        { title: 'Build a small prototype', description: 'Apply what you learned in code.' }
+      ],
+      resources: [
+        { title: 'Official Guide', url: 'https://developer.mozilla.org', type: 'article' }
+      ]
+    });
+  }
+  return { days };
+}
 // ─── Interview AI ────────────────────────────────────────────────────────────
 
 export async function generateInterviewQuestionsAI(
@@ -521,3 +585,91 @@ function getMockSkillGap() {
     ],
   };
 }
+
+// ─── Portfolio Analyzer (Phase 9) ──────────────────────────────────────────────
+
+export async function analyzePortfolioAI(githubData: any): Promise<any> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const prompt = `You are an expert tech recruiter and senior engineering manager. Review this GitHub profile data and provide a technical assessment of their portfolio.
+
+GitHub Data:
+${JSON.stringify(githubData, null, 2)}
+
+Return a valid JSON object (no markdown, no code fences):
+{
+  "score": <number 0-100>,
+  "overallAdvice": "<3-4 sentences of high-level advice>",
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "weaknesses": ["<weakness 1>", "<weakness 2>"],
+  "repoFeedback": [
+    { "repoName": "<repo name>", "feedback": "<1-2 sentences on how to improve this specific repo>" }
+  ]
+}`;
+
+  if (!apiKey) {
+    return {
+      score: 75,
+      overallAdvice: "Good start, but you need more descriptive READMEs and diverse tech stacks.",
+      strengths: ["Consistent commits", "Good use of JavaScript"],
+      weaknesses: ["Lack of testing", "Empty READMEs"],
+      repoFeedback: [
+        { repoName: githubData[0]?.name || 'repo1', feedback: "Add a README explaining how to run the project." }
+      ]
+    };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Portfolio analysis error:', error);
+    return { score: 70, overallAdvice: "Analysis failed, please try again.", strengths: [], weaknesses: [], repoFeedback: [] };
+  }
+}
+
+// ─── Cover Letter Generator (Phase 10) ─────────────────────────────────────────
+
+export async function generateCoverLetterAI(
+  resumeContent: string,
+  jobDescription: string,
+  companyName: string,
+  jobTitle: string
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const prompt = `You are an expert career coach. Write a highly tailored, professional, and engaging cover letter for a candidate applying for the ${jobTitle} position at ${companyName}.
+
+Candidate's Resume Text:
+${resumeContent}
+
+Job Description:
+${jobDescription}
+
+Instructions:
+1. Do NOT include placeholders like [Your Name] or [Date] at the top. Just write the body of the letter (starting with "Dear Hiring Manager," or similar).
+2. Keep it between 3 to 4 paragraphs.
+3. Highlight the most relevant skills from the resume that match the job description.
+4. Keep the tone professional, enthusiastic, and confident.
+5. End with a strong call to action.
+
+Return ONLY the raw text of the cover letter. No JSON, no markdown, no code fences.`;
+
+  if (!apiKey) {
+    return `Dear Hiring Manager,\n\nI am thrilled to apply for the ${jobTitle} position at ${companyName}. Based on my background in software engineering, I believe I am a strong fit for this role.\n\nThank you for your time.\n\nSincerely,\nA Candidate`;
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (error) {
+    console.error('Cover letter generation error:', error);
+    return 'Failed to generate cover letter. Please try again.';
+  }
+}
+

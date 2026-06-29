@@ -12,6 +12,13 @@ import resumeRoutes from './routes/resumeRoutes';
 import jobMatchRoutes from './routes/jobMatchRoutes';
 import interviewRoutes from './routes/interviewRoutes';
 import skillGapRoutes from './routes/skillGapRoutes';
+import learningRoutes from './routes/learningRoutes';
+import jobApplicationRoutes from './routes/jobApplicationRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
+import portfolioRoutes from './routes/portfolioRoutes';
+import coverLetterRoutes from './routes/coverLetterRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 dotenv.config();
 
@@ -45,6 +52,13 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/jobmatch', jobMatchRoutes);
 app.use('/api/interview', interviewRoutes);
 app.use('/api/skillgap', skillGapRoutes);
+app.use('/api/learning', learningRoutes);
+app.use('/api/jobs', jobApplicationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/coverletter', coverLetterRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

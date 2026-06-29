@@ -1,0 +1,111 @@
+import { Request, Response } from 'express';
+import JobApplication from '../models/JobApplication';
+import Interview from '../models/Interview';
+import Resume from '../models/Resume';
+import JobMatch from '../models/JobMatch';
+import SkillGap from '../models/SkillGap';
+import LearningPath from '../models/LearningPath';
+
+// @desc    Get all analytics data for dashboard
+// @route   GET /api/analytics
+// @access  Private
+export const getAnalytics = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+
+    // 1. Job Applications Status Counts
+    const jobs = await JobApplication.find({ user: userId });
+    const jobStats = {
+      applied: 0,
+      oa: 0,
+      interview: 0,
+      offer: 0,
+      rejected: 0,
+      total: jobs.length,
+    };
+    jobs.forEach(job => {
+      if (job.status in jobStats) {
+        jobStats[job.status as keyof typeof jobStats]++;
+      }
+    });
+
+    // 2. Weekly Job Applications (Last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    // Create array of last 7 dates
+    const weeklyData: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      weeklyData[d.toLocaleDateString('en-US', { weekday: 'short' })] = 0;
+    }
+
+    const recentJobs = await JobApplication.find({
+      user: userId,
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    recentJobs.forEach(job => {
+      const dayName = job.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+      if (weeklyData[dayName] !== undefined) {
+        weeklyData[dayName]++;
+      }
+    });
+
+    const weeklyApplications = Object.keys(weeklyData).map(day => ({
+      day,
+      applications: weeklyData[day]
+    }));
+
+    // 3. Interview Scores
+    const interviews = await Interview.find({ user: userId, status: 'completed' })
+      .sort({ createdAt: -1 })
+      .limit(10);
+    
+    let avgInterviewScore = 0;
+    let interviewData: any[] = [];
+    if (interviews.length > 0) {
+      const totalScore = interviews.reduce((sum, iv) => sum + (iv.report?.overallScore || 0), 0);
+      avgInterviewScore = Math.round(totalScore / interviews.length);
+      
+      interviewData = interviews.reverse().map((iv, index) => ({
+        name: `Mock ${index + 1}`,
+        score: iv.report?.overallScore || 0,
+        domain: iv.domain
+      }));
+    }
+
+    // 4. Latest Resume Score
+    const latestResume = await Resume.findOne({ user: userId }).sort({ createdAt: -1 });
+    const resumeScore = latestResume?.analysis?.atsScore || 0;
+
+    // 5. AI Usage Counts
+    const matchCount = await JobMatch.countDocuments({ user: userId });
+    const skillGapCount = await SkillGap.countDocuments({ user: userId });
+    const learningPathCount = await LearningPath.countDocuments({ user: userId });
+    const interviewCount = await Interview.countDocuments({ user: userId });
+    
+    const aiUsage = [
+      { name: 'Job Matches', value: matchCount },
+      { name: 'Interviews', value: interviewCount },
+      { name: 'Skill Gaps', value: skillGapCount },
+      { name: 'Learning Paths', value: learningPathCount },
+    ];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        jobStats,
+        weeklyApplications,
+        avgInterviewScore,
+        interviewData,
+        resumeScore,
+        aiUsage
+      }
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
