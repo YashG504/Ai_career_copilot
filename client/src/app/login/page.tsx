@@ -37,8 +37,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full bg-grid-pattern">
       {/* Left Decorative Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center">
-        <div className="absolute top-[20%] left-[10%] w-[400px] h-[400px] rounded-full bg-primary/15 blur-[100px] animate-float" />
-        <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-chart-5/15 blur-[100px] animate-float" style={{ animationDelay: '3s' }} />
+        {/* Removed decorative background blobs for standard clean UI */}
+
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}

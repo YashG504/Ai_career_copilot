@@ -4,34 +4,36 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
+import { FileText, Target, Mic, LayoutDashboard, Brain, TrendingUp } from 'lucide-react';
+
 const features = [
   {
-    icon: '📄',
+    icon: <FileText className="w-8 h-8" />,
     title: 'AI Resume Analysis',
     description: 'Get ATS scores, keyword suggestions, and formatting tips powered by AI.',
   },
   {
-    icon: '🎯',
+    icon: <Target className="w-8 h-8" />,
     title: 'Job Match Scoring',
     description: 'Paste a job description and instantly see your match score and gaps.',
   },
   {
-    icon: '🎤',
+    icon: <Mic className="w-8 h-8" />,
     title: 'AI Mock Interviews',
     description: 'Practice with AI-powered technical, behavioral, and coding interviews.',
   },
   {
-    icon: '📊',
+    icon: <LayoutDashboard className="w-8 h-8" />,
     title: 'Smart Dashboard',
     description: 'Track applications, scores, progress, and AI usage in one place.',
   },
   {
-    icon: '🧠',
+    icon: <Brain className="w-8 h-8" />,
     title: 'Skill Gap Analyzer',
     description: 'Compare your resume against job requirements and get a learning roadmap.',
   },
   {
-    icon: '📈',
+    icon: <TrendingUp className="w-8 h-8" />,
     title: 'Career Analytics',
     description: 'Visualize your growth with charts for applications, scores, and skills.',
   },
@@ -82,10 +84,6 @@ export default function Home() {
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative overflow-hidden py-24 md:py-36 lg:py-44">
-          {/* Gradient Orbs */}
-          <div className="absolute top-[-200px] left-[-100px] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] animate-float" />
-          <div className="absolute bottom-[-200px] right-[-100px] w-[400px] h-[400px] rounded-full bg-chart-5/20 blur-[120px] animate-float" style={{ animationDelay: '3s' }} />
-
           <div className="container mx-auto px-4 md:px-6 relative z-10">
             <motion.div
               initial="hidden"
@@ -111,7 +109,7 @@ export default function Home() {
                 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
               >
                 Land Your{' '}
-                <span className="bg-gradient-to-r from-primary via-chart-5 to-chart-2 bg-clip-text text-transparent animate-gradient-shift">
+                <span className="text-primary underline decoration-2 underline-offset-4">
                   Dream Job
                 </span>
                 <br />
@@ -202,7 +200,7 @@ export default function Home() {
                   transition={{ duration: 0.5 }}
                   className="group relative rounded-2xl border border-border/50 bg-card/50 p-6 hover:bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
                 >
-                  <div className="text-3xl mb-4">{feature.icon}</div>
+                  <div className="text-primary mb-4">{feature.icon}</div>
                   <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
                     {feature.title}
                   </h3>
@@ -223,9 +221,8 @@ export default function Home() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-card to-chart-5/10 border border-primary/20 p-12 md:p-20 text-center"
+              className="relative overflow-hidden rounded-3xl bg-muted/30 border border-border p-12 md:p-20 text-center"
             >
-              <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-primary/10 rounded-full blur-[80px]" />
               <h2 className="text-3xl md:text-4xl font-bold mb-4 relative z-10">
                 Ready to Transform Your Job Search?
               </h2>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { coverLetterAPI, resumeAPI } from '@/lib/api';
-import { FileText, Copy, Check, Trash2, PenTool } from 'lucide-react';
+import { FileText, Copy, Check, Trash2, PenTool, History } from 'lucide-react';
 
 export default function CoverLetterPage() {
   const [view, setView] = useState<'form' | 'result' | 'history'>('form');
@@ -95,7 +95,7 @@ export default function CoverLetterPage() {
         </div>
         <div className="flex gap-2">
           {view !== 'form' && <Button variant="outline" onClick={() => setView('form')} className="rounded-full">← New Letter</Button>}
-          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full">📜 History</Button>}
+          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full flex items-center gap-2"><History className="w-4 h-4" /> History</Button>}
         </div>
       </motion.div>
 
@@ -116,11 +116,11 @@ export default function CoverLetterPage() {
                         <button
                           key={r._id}
                           onClick={() => setFormData({ ...formData, resumeId: r._id })}
-                          className={\`px-5 py-2.5 rounded-xl border transition-all text-sm font-medium \${
+                          className={`px-5 py-2.5 rounded-xl border transition-all text-sm font-medium ${
                             formData.resumeId === r._id
                               ? 'bg-primary text-primary-foreground border-primary shadow-md'
                               : 'border-border/50 bg-background/50 hover:border-primary/50 text-muted-foreground'
-                          }\`}
+                          }`}
                         >
                           {r.label || r.fileName}
                         </button>
@@ -162,7 +162,7 @@ export default function CoverLetterPage() {
                   <p className="text-xs text-muted-foreground text-right">{formData.jobDescription.length} chars (min 50)</p>
                 </div>
 
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <Button 
                   onClick={handleGenerate} 

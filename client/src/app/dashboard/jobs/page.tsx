@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { jobMatchAPI, resumeAPI } from '@/lib/api';
+import { History, AlertTriangle, CheckCircle2, XCircle, Key, Hammer, TrendingUp, Inbox, FileText } from 'lucide-react';
 
 interface MatchResult {
   _id: string;
@@ -135,8 +136,8 @@ export default function JobMatchPage() {
             </Button>
           )}
           {view !== 'history' && (
-            <Button variant="outline" onClick={handleViewHistory} className="rounded-full">
-              📜 History
+            <Button variant="outline" onClick={handleViewHistory} className="rounded-full flex items-center gap-2">
+              <History className="w-4 h-4" /> History
             </Button>
           )}
         </div>
@@ -248,11 +249,11 @@ export default function JobMatchPage() {
 
             {/* No resume warning */}
             {resumes.length === 0 && (
-              <Card className="border-amber-500/20 bg-amber-500/5">
+              <Card className="border-border bg-muted/20">
                 <CardContent className="flex items-center gap-3 py-4">
-                  <span className="text-2xl">⚠️</span>
+                  <AlertTriangle className="w-8 h-8 text-primary" />
                   <div>
-                    <p className="text-sm font-medium text-amber-400">No resumes uploaded</p>
+                    <p className="text-sm font-medium text-primary">No resumes uploaded</p>
                     <p className="text-xs text-muted-foreground">
                       Upload a resume in the Resume Center first to get accurate match results.
                     </p>
@@ -268,16 +269,9 @@ export default function JobMatchPage() {
           <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
             {/* Match Score Hero */}
             <div className="grid md:grid-cols-3 gap-4">
-              <Card className={`md:col-span-1 border-border/50 ${
-                result.analysis.matchScore >= 80 ? 'bg-emerald-500/10 border-emerald-500/30' :
-                result.analysis.matchScore >= 60 ? 'bg-amber-500/10 border-amber-500/30' :
-                'bg-red-500/10 border-red-500/30'
-              }`}>
+              <Card className={`md:col-span-1 border-border/50 bg-card/80`}>
                 <CardContent className="flex flex-col items-center justify-center py-8">
-                  <span className={`text-6xl font-bold ${
-                    result.analysis.matchScore >= 80 ? 'text-emerald-400' :
-                    result.analysis.matchScore >= 60 ? 'text-amber-400' : 'text-red-400'
-                  }`}>
+                  <span className={`text-6xl font-bold text-primary`}>
                     {result.analysis.matchScore}%
                   </span>
                   <p className="text-sm text-muted-foreground mt-2">Match Score</p>
@@ -290,7 +284,7 @@ export default function JobMatchPage() {
               </Card>
 
               <Card className="md:col-span-2 border-border/50 bg-card/80">
-                <CardHeader><CardTitle className="text-lg">📋 Summary</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Summary</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-muted-foreground leading-relaxed">{result.analysis.summary}</p>
                   <div className="flex gap-4 text-sm">
@@ -309,25 +303,25 @@ export default function JobMatchPage() {
 
             {/* Matching vs Missing Skills */}
             <div className="grid md:grid-cols-2 gap-4">
-              <Card className="border-emerald-500/20 bg-emerald-500/5">
-                <CardHeader><CardTitle className="text-lg text-emerald-400">✅ Matching Skills ({result.analysis.matchingSkills?.length || 0})</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-lg text-primary flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Matching Skills ({result.analysis.matchingSkills?.length || 0})</CardTitle></CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.matchingSkills?.map((skill: string, i: number) => (
-                      <span key={i} className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs text-emerald-400">
-                        ✓ {skill}
+                      <span key={i} className="rounded-full bg-muted border border-border px-3 py-1 text-xs text-primary">
+                        {skill}
                       </span>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-red-500/20 bg-red-500/5">
-                <CardHeader><CardTitle className="text-lg text-red-400">❌ Missing Skills ({result.analysis.missingSkills?.length || 0})</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-lg text-primary flex items-center gap-2"><XCircle className="w-5 h-5" /> Missing Skills ({result.analysis.missingSkills?.length || 0})</CardTitle></CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.missingSkills?.map((skill: string, i: number) => (
-                      <span key={i} className="rounded-full bg-red-500/10 border border-red-500/20 px-3 py-1 text-xs text-red-400">
-                        ✗ {skill}
+                      <span key={i} className="rounded-full bg-transparent border border-border px-3 py-1 text-xs text-primary opacity-80">
+                        {skill}
                       </span>
                     ))}
                   </div>
@@ -337,7 +331,7 @@ export default function JobMatchPage() {
 
             {/* Keyword Match */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">🔑 Keyword Analysis</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Key className="w-5 h-5" /> Keyword Analysis</CardTitle></CardHeader>
               <CardContent className="grid md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 font-medium">Found in Resume</p>
@@ -353,7 +347,7 @@ export default function JobMatchPage() {
                   <p className="text-xs text-muted-foreground mb-2 font-medium">Missing from Resume</p>
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.keywordMatch?.missing?.map((kw: string, i: number) => (
-                      <span key={i} className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs text-amber-400">
+                      <span key={i} className="rounded-full bg-muted border border-border px-3 py-1 text-xs text-primary opacity-80">
                         + {kw}
                       </span>
                     ))}
@@ -364,7 +358,7 @@ export default function JobMatchPage() {
 
             {/* Suggested Projects */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">🛠️ Suggested Projects to Build</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Hammer className="w-5 h-5" /> Suggested Projects to Build</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {result.analysis.suggestedProjects?.map((project, i: number) => (
                   <div key={i} className="rounded-xl border border-border/50 bg-muted/20 p-4">
@@ -377,7 +371,7 @@ export default function JobMatchPage() {
                         <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {project.skills?.map((skill: string, j: number) => (
-                            <span key={j} className="rounded-full bg-chart-2/10 border border-chart-2/20 px-2.5 py-0.5 text-xs text-chart-2">
+                            <span key={j} className="rounded-full bg-muted border border-border px-2.5 py-0.5 text-xs text-primary">
                               {skill}
                             </span>
                           ))}
@@ -391,12 +385,12 @@ export default function JobMatchPage() {
 
             {/* Resume Improvements */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">🚀 Resume Improvements for This Job</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Resume Improvements for This Job</CardTitle></CardHeader>
               <CardContent>
                 <ul className="space-y-3">
                   {result.analysis.resumeImprovements?.map((imp: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-sm">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-primary text-xs font-bold shrink-0">
                         {i + 1}
                       </span>
                       <span className="text-muted-foreground">{imp}</span>
@@ -414,7 +408,7 @@ export default function JobMatchPage() {
             {history.length === 0 ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <span className="text-5xl mb-3">📭</span>
+                  <Inbox className="w-12 h-12 text-muted-foreground mb-3" />
                   <p className="text-lg font-medium mb-1">No matches yet</p>
                   <p className="text-muted-foreground text-sm">Paste a job description to get your first AI match analysis.</p>
                 </CardContent>
@@ -430,11 +424,7 @@ export default function JobMatchPage() {
                   <Card className="border-border/50 bg-card/80 hover:bg-card transition-all duration-200">
                     <CardContent className="flex items-center gap-4 py-4">
                       {/* Score */}
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold shrink-0 ${
-                        match.matchScore >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
-                        match.matchScore >= 60 ? 'bg-amber-500/10 text-amber-400' :
-                        'bg-red-500/10 text-red-400'
-                      }`}>
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold shrink-0 bg-muted border border-border text-primary`}>
                         {match.matchScore}%
                       </div>
                       {/* Info */}

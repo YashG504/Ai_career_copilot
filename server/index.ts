@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
+import multer from 'multer';
 
 // Route imports
 import authRoutes from './routes/authRoutes';
@@ -66,6 +67,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Health check
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'AI Career Copilot API is running 🚀' });
+});
+
+// Global error handler (handles Multer and other errors)
+app.use((err: any, req: Request, res: Response, next: any) => {
+  if (err && err.name === 'MulterError') {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
+  console.error('Unhandled error:', err);
+  return res.status(err?.status || 500).json({ success: false, message: err?.message || 'Server error' });
 });
 
 // Start Server

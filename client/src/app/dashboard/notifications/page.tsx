@@ -49,10 +49,10 @@ export default function NotificationsPage() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
-      case 'warning': return <AlertCircle className="w-5 h-5 text-amber-500" />;
-      case 'alert': return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default: return <Info className="w-5 h-5 text-blue-500" />;
+      case 'success': return <CheckCircle2 className="w-5 h-5 text-primary" />;
+      case 'warning': return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
+      case 'alert': return <AlertCircle className="w-5 h-5 text-primary opacity-80" />;
+      default: return <Info className="w-5 h-5 text-primary" />;
     }
   };
 
@@ -100,12 +100,12 @@ export default function NotificationsPage() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className={\`border-border/50 transition-colors \${n.isRead ? 'bg-background' : 'bg-card border-primary/20 shadow-sm'}\`}>
+                <Card className={`border-border/50 transition-colors ${n.isRead ? 'bg-background' : 'bg-card border-primary/20 shadow-sm'}`}>
                   <CardContent className="p-5 flex gap-4">
                     <div className="shrink-0 mt-1">{getIcon(n.type)}</div>
                     <div className="flex-1">
-                      <h4 className={\`font-semibold text-lg \${!n.isRead ? 'text-foreground' : 'text-muted-foreground'}\`}>{n.title}</h4>
-                      <p className={\`text-sm mt-1 \${!n.isRead ? 'text-muted-foreground' : 'text-muted-foreground/70'}\`}>{n.message}</p>
+                      <h4 className={`font-semibold text-lg ${!n.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</h4>
+                      <p className={`text-sm mt-1 ${!n.isRead ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}>{n.message}</p>
                       <p className="text-xs text-muted-foreground/50 mt-3">{new Date(n.createdAt).toLocaleString()}</p>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">

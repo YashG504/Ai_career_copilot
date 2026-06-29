@@ -23,6 +23,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
   const allowedTypes = [
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'application/msword', // .doc (legacy)
   ];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);

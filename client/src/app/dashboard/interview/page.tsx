@@ -5,26 +5,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { interviewAPI } from '@/lib/api';
+import { Monitor, Server, Database, Coffee, Code2, Cloud, Terminal, Users, Puzzle, Mic, History, CheckCircle2, AlertTriangle, FileText, Search, TrendingUp, ChevronRight } from 'lucide-react';
 
 const DOMAINS = [
-  { id: 'frontend', label: 'Frontend', icon: '🎨', desc: 'React, CSS, DOM, TypeScript' },
-  { id: 'backend', label: 'Backend', icon: '⚙️', desc: 'Node.js, APIs, Databases' },
-  { id: 'mern', label: 'MERN Stack', icon: '🔥', desc: 'MongoDB, Express, React, Node' },
-  { id: 'java', label: 'Java', icon: '☕', desc: 'OOP, Spring, JVM' },
-  { id: 'python', label: 'Python', icon: '🐍', desc: 'Django, Flask, Data Structures' },
-  { id: 'devops', label: 'DevOps', icon: '🚀', desc: 'Docker, CI/CD, AWS, K8s' },
+  { id: 'frontend', label: 'Frontend', icon: <Monitor className="w-6 h-6" />, desc: 'React, CSS, DOM, TypeScript' },
+  { id: 'backend', label: 'Backend', icon: <Server className="w-6 h-6" />, desc: 'Node.js, APIs, Databases' },
+  { id: 'mern', label: 'MERN Stack', icon: <Database className="w-6 h-6" />, desc: 'MongoDB, Express, React, Node' },
+  { id: 'java', label: 'Java', icon: <Coffee className="w-6 h-6" />, desc: 'OOP, Spring, JVM' },
+  { id: 'python', label: 'Python', icon: <Code2 className="w-6 h-6" />, desc: 'Django, Flask, Data Structures' },
+  { id: 'devops', label: 'DevOps', icon: <Cloud className="w-6 h-6" />, desc: 'Docker, CI/CD, AWS, K8s' },
 ];
 
 const TYPES = [
-  { id: 'technical', label: 'Technical', icon: '💻', desc: 'Concepts & system design' },
-  { id: 'hr', label: 'HR / Behavioral', icon: '🤝', desc: 'STAR method questions' },
-  { id: 'coding', label: 'Coding', icon: '🧩', desc: 'Problem solving' },
+  { id: 'technical', label: 'Technical', icon: <Terminal className="w-6 h-6" />, desc: 'Concepts & system design' },
+  { id: 'hr', label: 'HR / Behavioral', icon: <Users className="w-6 h-6" />, desc: 'STAR method questions' },
+  { id: 'coding', label: 'Coding', icon: <Puzzle className="w-6 h-6" />, desc: 'Problem solving' },
 ];
 
 const DIFFICULTIES = [
-  { id: 'easy', label: 'Easy', color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' },
-  { id: 'medium', label: 'Medium', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10' },
-  { id: 'hard', label: 'Hard', color: 'text-red-400 border-red-500/30 bg-red-500/10' },
+  { id: 'easy', label: 'Easy', color: 'text-primary border-border bg-muted/10' },
+  { id: 'medium', label: 'Medium', color: 'text-primary border-border bg-muted/30' },
+  { id: 'hard', label: 'Hard', color: 'text-primary border-border bg-muted/50' },
 ];
 
 type View = 'setup' | 'session' | 'report' | 'history';
@@ -106,7 +107,7 @@ export default function InterviewCenterPage() {
         </div>
         <div className="flex gap-2">
           {view !== 'setup' && <Button variant="outline" onClick={() => setView('setup')} className="rounded-full">← New Interview</Button>}
-          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full">📜 History</Button>}
+          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full flex items-center gap-2"><History className="w-4 h-4" /> History</Button>}
         </div>
       </motion.div>
 
@@ -128,7 +129,7 @@ export default function InterviewCenterPage() {
                         : 'border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card/80'
                     }`}
                   >
-                    <span className="text-2xl">{d.icon}</span>
+                    <span className="text-primary mb-2 inline-block">{d.icon}</span>
                     <p className="font-medium mt-2">{d.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{d.desc}</p>
                   </button>
@@ -150,7 +151,7 @@ export default function InterviewCenterPage() {
                         : 'border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card/80'
                     }`}
                   >
-                    <span className="text-2xl">{t.icon}</span>
+                    <span className="text-primary mb-2 inline-block">{t.icon}</span>
                     <p className="font-medium mt-2">{t.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
                   </button>
@@ -189,7 +190,7 @@ export default function InterviewCenterPage() {
                   Generating Questions...
                 </span>
               ) : (
-                '🎤 Start Interview'
+                <span className="flex items-center gap-2"><Mic className="w-5 h-5" /> Start Interview</span>
               )}
             </Button>
           </motion.div>
@@ -206,7 +207,7 @@ export default function InterviewCenterPage() {
               </div>
               <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-chart-2"
+                  className="h-full rounded-full bg-primary"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.5 }}
@@ -251,9 +252,9 @@ export default function InterviewCenterPage() {
                       Evaluating...
                     </span>
                   ) : interview.currentQuestionIndex === interview.totalQuestions - 1 ? (
-                    '✅ Submit & Finish'
+                    <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Submit & Finish</span>
                   ) : (
-                    'Submit & Next →'
+                    <span className="flex items-center gap-2">Submit & Next <ChevronRight className="w-4 h-4" /></span>
                   )}
                 </Button>
               </div>
@@ -268,11 +269,7 @@ export default function InterviewCenterPage() {
                     <CardContent className="py-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-muted-foreground">Q{i + 1}</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          q.evaluation.score >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
-                          q.evaluation.score >= 60 ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-red-500/10 text-red-400'
-                        }`}>{q.evaluation.score}/100</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border border-border text-primary`}>{q.evaluation.score}/100</span>
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{q.question}</p>
                     </CardContent>
@@ -287,19 +284,12 @@ export default function InterviewCenterPage() {
         {view === 'report' && interview && interview.report && (
           <motion.div key="report" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
             {/* Score Hero */}
-            <Card className={`border-border/50 ${
-              interview.report.overallScore >= 80 ? 'bg-emerald-500/10 border-emerald-500/30' :
-              interview.report.overallScore >= 60 ? 'bg-amber-500/10 border-amber-500/30' :
-              'bg-red-500/10 border-red-500/30'
-            }`}>
+            <Card className={`border-border/50 bg-muted/20`}>
               <CardContent className="text-center py-8">
                 <p className="text-sm text-muted-foreground mb-2">
                   {interview.domain} • {interview.type} • {interview.difficulty}
                 </p>
-                <span className={`text-6xl font-bold ${
-                  interview.report.overallScore >= 80 ? 'text-emerald-400' :
-                  interview.report.overallScore >= 60 ? 'text-amber-400' : 'text-red-400'
-                }`}>
+                <span className={`text-6xl font-bold text-primary`}>
                   {interview.report.overallScore}/100
                 </span>
                 <p className="text-sm text-muted-foreground mt-2">Overall Interview Score</p>
@@ -308,25 +298,25 @@ export default function InterviewCenterPage() {
 
             {/* Summary */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">📋 Summary</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Summary</CardTitle></CardHeader>
               <CardContent><p className="text-muted-foreground leading-relaxed">{interview.report.summary}</p></CardContent>
             </Card>
 
             {/* Strengths & Weaknesses */}
             <div className="grid md:grid-cols-2 gap-4">
-              <Card className="border-emerald-500/20 bg-emerald-500/5">
-                <CardHeader><CardTitle className="text-lg text-emerald-400">✅ Strengths</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-lg text-primary flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Strengths</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-2">{interview.report.strengths?.map((s: string, i: number) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-emerald-400 mt-0.5">•</span>{s}</li>
+                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-primary mt-0.5">•</span>{s}</li>
                   ))}</ul>
                 </CardContent>
               </Card>
-              <Card className="border-red-500/20 bg-red-500/5">
-                <CardHeader><CardTitle className="text-lg text-red-400">⚠️ Weaknesses</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-lg text-primary flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Weaknesses</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-2">{interview.report.weaknesses?.map((w: string, i: number) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-red-400 mt-0.5">•</span>{w}</li>
+                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="text-primary mt-0.5">•</span>{w}</li>
                   ))}</ul>
                 </CardContent>
               </Card>
@@ -335,20 +325,16 @@ export default function InterviewCenterPage() {
             {/* Topic Breakdown */}
             {interview.report.topicBreakdown?.length > 0 && (
               <Card className="border-border/50 bg-card/80">
-                <CardHeader><CardTitle className="text-lg">📊 Topic Breakdown</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Search className="w-5 h-5" /> Topic Breakdown</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {interview.report.topicBreakdown.map((topic: any, i: number) => (
                     <div key={i} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{topic.topic}</span>
-                        <span className={`font-medium ${
-                          topic.score >= 80 ? 'text-emerald-400' : topic.score >= 60 ? 'text-amber-400' : 'text-red-400'
-                        }`}>{topic.score}/100</span>
+                        <span className={`font-medium text-primary`}>{topic.score}/100</span>
                       </div>
                       <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
-                        <div className={`h-full rounded-full ${
-                          topic.score >= 80 ? 'bg-emerald-500' : topic.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                        }`} style={{ width: `${topic.score}%` }} />
+                        <div className={`h-full rounded-full bg-primary`} style={{ width: `${topic.score}%` }} />
                       </div>
                       <p className="text-xs text-muted-foreground">{topic.feedback}</p>
                     </div>
@@ -359,18 +345,14 @@ export default function InterviewCenterPage() {
 
             {/* Question Review */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">🔍 Question Review</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Search className="w-5 h-5" /> Question Review</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {interview.questions.map((q: any, i: number) => (
                   <div key={i} className="rounded-xl border border-border/30 bg-muted/10 p-4 space-y-2">
                     <div className="flex items-start justify-between">
                       <p className="text-sm font-medium">Q{i + 1}: {q.question}</p>
                       {q.evaluation && (
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ml-2 ${
-                          q.evaluation.score >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
-                          q.evaluation.score >= 60 ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-red-500/10 text-red-400'
-                        }`}>{q.evaluation.score}/100</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ml-2 border border-border text-primary`}>{q.evaluation.score}/100</span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground"><strong>Your Answer:</strong> {q.userAnswer}</p>
@@ -382,12 +364,12 @@ export default function InterviewCenterPage() {
 
             {/* Improvement Roadmap */}
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">🚀 Improvement Roadmap</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Improvement Roadmap</CardTitle></CardHeader>
               <CardContent>
                 <ul className="space-y-3">
                   {interview.report.roadmap?.map((step: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-sm">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{i + 1}</span>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-primary text-xs font-bold shrink-0">{i + 1}</span>
                       <span className="text-muted-foreground">{step}</span>
                     </li>
                   ))}
@@ -403,7 +385,7 @@ export default function InterviewCenterPage() {
             {history.length === 0 ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <span className="text-5xl mb-3">🎤</span>
+                  <Mic className="w-12 h-12 text-muted-foreground mb-3" />
                   <p className="text-lg font-medium mb-1">No interviews yet</p>
                   <p className="text-muted-foreground text-sm">Start your first mock interview to practice!</p>
                 </CardContent>
@@ -413,11 +395,7 @@ export default function InterviewCenterPage() {
                 <motion.div key={iv._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                   <Card className="border-border/50 bg-card/80 hover:bg-card transition-all">
                     <CardContent className="flex items-center gap-4 py-4">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold shrink-0 ${
-                        (iv.report?.overallScore || 0) >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
-                        (iv.report?.overallScore || 0) >= 60 ? 'bg-amber-500/10 text-amber-400' :
-                        'bg-red-500/10 text-red-400'
-                      }`}>
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold shrink-0 bg-muted border border-border text-primary`}>
                         {iv.report?.overallScore || '—'}
                       </div>
                       <div className="flex-1 min-w-0">

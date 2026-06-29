@@ -4,18 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
+import { LayoutDashboard, FileText, Target, Mic, Brain, BookOpen, Kanban, LineChart, Briefcase, User, LogOut } from 'lucide-react';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/resume', label: 'Resume Center', icon: '📄' },
-  { href: '/dashboard/jobs', label: 'Job Matcher', icon: '🎯' },
-  { href: '/dashboard/interview', label: 'Interview Center', icon: '🎤' },
-  { href: '/dashboard/skills', label: 'Skill Gap', icon: '🧠' },
-  { href: '/dashboard/learning', label: 'Learning', icon: '📚' },
-  { href: '/dashboard/tracker', label: 'Job Tracker', icon: '📋' },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
-  { href: '/dashboard/portfolio', label: 'Portfolio', icon: '💼' },
-  { href: '/dashboard/profile', label: 'Profile', icon: '👤' },
+  { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { href: '/dashboard/resume', label: 'Resume Center', icon: <FileText className="w-5 h-5" /> },
+  { href: '/dashboard/jobs', label: 'Job Matcher', icon: <Target className="w-5 h-5" /> },
+  { href: '/dashboard/interview', label: 'Interview Center', icon: <Mic className="w-5 h-5" /> },
+  { href: '/dashboard/skills', label: 'Skill Gap', icon: <Brain className="w-5 h-5" /> },
+  { href: '/dashboard/learning', label: 'Learning', icon: <BookOpen className="w-5 h-5" /> },
+  { href: '/dashboard/tracker', label: 'Job Tracker', icon: <Kanban className="w-5 h-5" /> },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: <LineChart className="w-5 h-5" /> },
+  { href: '/dashboard/portfolio', label: 'Portfolio', icon: <Briefcase className="w-5 h-5" /> },
+  { href: '/dashboard/profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
 ];
 
 export default function Sidebar() {
@@ -54,7 +55,7 @@ export default function Sidebar() {
                       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
-                  <span className="relative z-10 text-base">{item.icon}</span>
+                  <span className="relative z-10 flex items-center justify-center">{item.icon}</span>
                   <span className="relative z-10">{item.label}</span>
                 </Link>
               </li>
@@ -82,7 +83,7 @@ export default function Sidebar() {
             className="text-sidebar-foreground/50 hover:text-destructive transition-colors text-lg"
             title="Logout"
           >
-            🚪
+            <LogOut className="w-5 h-5" />
           </button>
         </div>
       </div>

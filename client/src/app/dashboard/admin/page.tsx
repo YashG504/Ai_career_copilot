@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { adminAPI } from '@/lib/api';
-import { Users, FileText, Briefcase, BrainCircuit, Activity, BookOpen, UserCheck } from 'lucide-react';
+import { Users, FileText, Briefcase, BrainCircuit, Activity, BookOpen, UserCheck, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -39,7 +40,7 @@ export default function AdminDashboardPage() {
   if (loading) return <div className="flex h-64 items-center justify-center text-muted-foreground">Loading Admin Dashboard...</div>;
   if (error) return (
     <div className="flex h-[70vh] flex-col items-center justify-center text-center">
-      <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+      <AlertCircle className="w-16 h-16 text-destructive mb-4" />
       <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
       <p className="text-muted-foreground mb-6">{error}</p>
       <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
@@ -60,7 +61,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Total Users</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500"><Users className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><Users className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{stats.totalUsers}</span>
           </CardContent>
@@ -69,7 +70,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Total Resumes</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500"><FileText className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><FileText className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{stats.totalResumes}</span>
           </CardContent>
@@ -78,7 +79,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Job Applications</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500"><Briefcase className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><Briefcase className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{stats.totalJobApplications}</span>
           </CardContent>
@@ -87,7 +88,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">AI Generations</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500"><BrainCircuit className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><BrainCircuit className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{stats.totalAIGenerations}</span>
           </CardContent>
@@ -138,7 +139,7 @@ export default function AdminDashboardPage() {
                       <td className="px-4 py-3 font-medium text-foreground">{user.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                       <td className="px-4 py-3">
-                        <span className={\`px-2 py-1 rounded-full text-xs font-bold \${user.role === 'admin' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}\`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.role === 'admin' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                           {user.role}
                         </span>
                       </td>

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth-context';
 import { profileAPI } from '@/lib/api';
+import { FileText, Briefcase, Mic, Target, User, Brain, LayoutDashboard, Activity, Kanban } from 'lucide-react';
 
 interface DashboardStats {
   resumeScore: number;
@@ -57,51 +58,51 @@ export default function DashboardPage() {
       title: 'Resume Score',
       value: stats ? `${stats.resumeScore}/100` : '—',
       description: 'Upload your resume to get scored',
-      icon: '📄',
-      color: 'from-violet-500/20 to-purple-500/10',
+      icon: <FileText className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
     {
       title: 'Job Applications',
       value: stats ? `${stats.jobApplications}` : '—',
       description: `${stats?.activeInterviews || 0} active interviews`,
-      icon: '💼',
-      color: 'from-blue-500/20 to-cyan-500/10',
+      icon: <Briefcase className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
     {
       title: 'Interview Score',
       value: stats ? `${stats.interviewScore}/100` : '—',
       description: 'Practice to improve',
-      icon: '🎤',
-      color: 'from-emerald-500/20 to-green-500/10',
+      icon: <Mic className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
     {
       title: 'ATS Score',
       value: stats ? `${stats.atsScore}%` : '—',
       description: 'Applicant Tracking System',
-      icon: '🎯',
-      color: 'from-orange-500/20 to-amber-500/10',
+      icon: <Target className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
     {
       title: 'Profile Completion',
       value: stats ? `${stats.profileCompletion}%` : '—',
       description: 'Complete your profile',
-      icon: '👤',
-      color: 'from-pink-500/20 to-rose-500/10',
+      icon: <User className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
     {
       title: 'AI Credits Used',
       value: stats ? `${stats.aiCreditsUsed}` : '—',
       description: 'Credits consumed',
-      icon: '🧠',
-      color: 'from-indigo-500/20 to-blue-500/10',
+      icon: <Brain className="w-6 h-6 text-primary" />,
+      color: 'bg-muted/30',
     },
   ];
 
   const quickActions = [
-    { label: 'Upload Resume', href: '/dashboard/resume', icon: '📄', desc: 'Get AI analysis' },
-    { label: 'Mock Interview', href: '/dashboard/interview', icon: '🎤', desc: 'Practice now' },
-    { label: 'Match Job', href: '/dashboard/jobs', icon: '🎯', desc: 'Paste a JD' },
-    { label: 'Track Jobs', href: '/dashboard/tracker', icon: '📋', desc: 'Kanban board' },
+    { label: 'Upload Resume', href: '/dashboard/resume', icon: <FileText className="w-6 h-6" />, desc: 'Get AI analysis' },
+    { label: 'Mock Interview', href: '/dashboard/interview', icon: <Mic className="w-6 h-6" />, desc: 'Practice now' },
+    { label: 'Match Job', href: '/dashboard/jobs', icon: <Target className="w-6 h-6" />, desc: 'Paste a JD' },
+    { label: 'Track Jobs', href: '/dashboard/tracker', icon: <Kanban className="w-6 h-6" />, desc: 'Kanban board' },
   ];
 
   return (
@@ -113,7 +114,7 @@ export default function DashboardPage() {
         transition={{ duration: 0.4 }}
       >
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, <span className="text-primary">{user?.name?.split(' ')[0] || 'there'}</span> 👋
+          Welcome back, <span className="text-primary">{user?.name?.split(' ')[0] || 'there'}</span>
         </h1>
         <p className="text-muted-foreground mt-1">
           Here&apos;s your career progress at a glance.
@@ -130,12 +131,12 @@ export default function DashboardPage() {
         {statCards.map((card) => (
           <motion.div key={card.title} variants={fadeInUp} transition={{ duration: 0.4 }}>
             <Card className="relative overflow-hidden border-border/50 bg-card/80 hover:bg-card hover:border-primary/20 transition-all duration-300 group">
-              <div className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+              <div className={`absolute inset-0 ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
               <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {card.title}
                 </CardTitle>
-                <span className="text-2xl">{card.icon}</span>
+                <div className="text-primary">{card.icon}</div>
               </CardHeader>
               <CardContent className="relative">
                 <div className="text-2xl font-bold">{card.value}</div>
@@ -160,7 +161,7 @@ export default function DashboardPage() {
               href={action.href}
               className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 hover:bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-2xl group-hover:bg-primary/20 transition-colors">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-primary group-hover:bg-primary/20 transition-colors">
                 {action.icon}
               </div>
               <div>
@@ -184,7 +185,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <span className="text-4xl mb-3">🚀</span>
+              <Activity className="w-12 h-12 text-muted-foreground mb-3" />
               <p className="text-muted-foreground">No activity yet. Start by uploading your resume!</p>
             </div>
           </CardContent>

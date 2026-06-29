@@ -10,11 +10,11 @@ import { jobTrackerAPI } from '@/lib/api';
 import { Plus, GripVertical, Building, MapPin, DollarSign, Trash2 } from 'lucide-react';
 
 const COLUMNS = [
-  { id: 'applied', label: 'Applied', color: 'bg-blue-500/10 border-blue-500/20 text-blue-500' },
-  { id: 'oa', label: 'Online Assessment', color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' },
-  { id: 'interview', label: 'Interviewing', color: 'bg-purple-500/10 border-purple-500/20 text-purple-500' },
-  { id: 'offer', label: 'Offer', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' },
-  { id: 'rejected', label: 'Rejected', color: 'bg-red-500/10 border-red-500/20 text-red-500' },
+  { id: 'applied', label: 'Applied', color: 'bg-muted/30 border-border text-primary' },
+  { id: 'oa', label: 'Online Assessment', color: 'bg-muted/50 border-border text-primary' },
+  { id: 'interview', label: 'Interviewing', color: 'bg-muted/70 border-border text-primary' },
+  { id: 'offer', label: 'Offer', color: 'bg-muted border-border text-primary font-medium' },
+  { id: 'rejected', label: 'Rejected', color: 'bg-transparent border-border text-muted-foreground' },
 ];
 
 export default function JobTrackerPage() {
@@ -123,7 +123,7 @@ export default function JobTrackerPage() {
               onDrop={(e) => handleDrop(e, col.id)}
             >
               {/* Column Header */}
-              <div className={\`px-4 py-3 border-b flex items-center justify-between \${col.color} bg-opacity-20\`}>
+              <div className={`px-4 py-3 border-b flex items-center justify-between ${col.color} bg-opacity-20`}>
                 <h3 className="font-semibold text-sm">{col.label}</h3>
                 <span className="text-xs font-bold bg-background/50 px-2 py-0.5 rounded-full">{colJobs.length}</span>
               </div>
@@ -152,7 +152,7 @@ export default function JobTrackerPage() {
                           </div>
                         )}
                         {job.salary && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-emerald-500/80">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                             <DollarSign className="w-3.5 h-3.5" />
                             <span>{job.salary}</span>
                           </div>

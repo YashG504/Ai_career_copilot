@@ -27,7 +27,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const user = await User.create({ name, email, password });
 
     // Generate token
-    const token = generateToken(user._id as string);
+    const token = generateToken(user._id.toString());
 
     res.status(201).json({
       success: true,
@@ -50,7 +50,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ success: false, message: messages.join(', ') });
       return;
     }
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Registration Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server error', error: String(error) });
   }
 };
 
@@ -81,7 +82,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Generate token
-    const token = generateToken(user._id as string);
+    const token = generateToken(user._id.toString());
 
     res.status(200).json({
       success: true,

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { portfolioAPI } from '@/lib/api';
-import { Github, Code2, AlertTriangle, Lightbulb, Trash2 } from 'lucide-react';
+import { GitBranch, Code2, AlertTriangle, Lightbulb, Trash2, History, CheckCircle2 } from 'lucide-react';
 
 export default function PortfolioAnalyzerPage() {
   const [view, setView] = useState<'form' | 'result' | 'history'>('form');
@@ -63,7 +63,7 @@ export default function PortfolioAnalyzerPage() {
         </div>
         <div className="flex gap-2">
           {view !== 'form' && <Button variant="outline" onClick={() => setView('form')} className="rounded-full">← New Analysis</Button>}
-          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full">📜 History</Button>}
+          {view !== 'history' && <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full flex items-center gap-2"><History className="w-4 h-4" /> History</Button>}
         </div>
       </motion.div>
 
@@ -73,7 +73,7 @@ export default function PortfolioAnalyzerPage() {
           <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
             <Card className="border-border/50 bg-card/50">
               <CardContent className="pt-10 pb-10 flex flex-col items-center text-center max-w-md mx-auto space-y-6">
-                <Github className="w-16 h-16 text-muted-foreground/50" />
+                <GitBranch className="w-16 h-16 text-muted-foreground/50" />
                 <div className="space-y-2 w-full">
                   <Label htmlFor="github" className="text-lg">GitHub Username</Label>
                   <Input
@@ -84,7 +84,7 @@ export default function PortfolioAnalyzerPage() {
                     className="h-14 text-lg text-center bg-background/50"
                   />
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button
                   onClick={handleAnalyze}
                   disabled={analyzing || !username.trim()}
@@ -109,17 +109,9 @@ export default function PortfolioAnalyzerPage() {
           <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
             {/* Score Hero */}
             <div className="grid md:grid-cols-3 gap-6">
-              <Card className={\`border-border/50 shadow-lg \${
-                result.analysis.score >= 80 ? 'bg-emerald-500/10 border-emerald-500/30' :
-                result.analysis.score >= 60 ? 'bg-amber-500/10 border-amber-500/30' :
-                'bg-red-500/10 border-red-500/30'
-              }\`}>
+              <Card className={`border-border/50 shadow-lg bg-muted/20`}>
                 <CardContent className="flex flex-col items-center justify-center py-10 text-center h-full">
-                  <span className={\`text-6xl font-bold \${
-                    result.analysis.score >= 80 ? 'text-emerald-500' :
-                    result.analysis.score >= 60 ? 'text-amber-500' :
-                    'text-red-500'
-                  }\`}>
+                  <span className={`text-6xl font-bold text-primary`}>
                     {result.analysis.score}/100
                   </span>
                   <p className="text-sm text-muted-foreground mt-2 font-medium">Portfolio Score</p>
@@ -137,25 +129,25 @@ export default function PortfolioAnalyzerPage() {
 
             {/* Strengths & Weaknesses */}
             <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-emerald-500/20 bg-emerald-500/5">
-                <CardHeader><CardTitle className="text-emerald-500 flex items-center gap-2">✅ Strengths</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-primary flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Strengths</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
                     {result.analysis.strengths.map((s: string, i: number) => (
                       <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                        <span className="text-emerald-500 mt-1">•</span> {s}
+                        <span className="text-primary mt-1">•</span> {s}
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
-              <Card className="border-amber-500/20 bg-amber-500/5">
-                <CardHeader><CardTitle className="text-amber-500 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Areas to Improve</CardTitle></CardHeader>
+              <Card className="border-border bg-card">
+                <CardHeader><CardTitle className="text-primary flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Areas to Improve</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
                     {result.analysis.weaknesses.map((w: string, i: number) => (
                       <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                        <span className="text-amber-500 mt-1">•</span> {w}
+                        <span className="text-primary mt-1">•</span> {w}
                       </li>
                     ))}
                   </ul>
@@ -202,7 +194,7 @@ export default function PortfolioAnalyzerPage() {
                           <p className="text-xs text-muted-foreground mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className={\`text-xl font-bold \${p.analysis.score >= 80 ? 'text-emerald-500' : p.analysis.score >= 60 ? 'text-amber-500' : 'text-red-500'}\`}>
+                          <span className={`text-xl font-bold text-primary`}>
                             {p.analysis.score}
                           </span>
                           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(p._id); }} className="text-destructive hover:text-destructive hover:bg-destructive/10">

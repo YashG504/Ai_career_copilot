@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import Resume from '../models/Resume';
+import JobApplication from '../models/JobApplication';
+import Interview from '../models/Interview';
+import JobMatch from '../models/JobMatch';
+import SkillGap from '../models/SkillGap';
+import LearningPath from '../models/LearningPath';
 
 // @desc    Get user profile
 // @route   GET /api/profile
@@ -68,15 +74,36 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // For now, return placeholder stats. These will be populated as we build more modules.
+    // Fetch actual stats from the database
+    const [latestResume, jobApplications, activeInterviews, allInterviews, aiCredits] = await Promise.all([
+      Resume.findOne({ user: user._id }).sort({ createdAt: -1 }),
+      JobApplication.countDocuments({ user: user._id }),
+      Interview.countDocuments({ user: user._id, status: 'in-progress' }),
+      Interview.find({ user: user._id, status: 'completed' }),
+      // Sum all AI-related documents for credits used
+      Promise.all([
+        Resume.countDocuments({ user: user._id }),
+        JobMatch.countDocuments({ user: user._id }),
+        SkillGap.countDocuments({ user: user._id }),
+        LearningPath.countDocuments({ user: user._id }),
+        Interview.countDocuments({ user: user._id })
+      ]).then(counts => counts.reduce((a, b) => a + b, 0))
+    ]);
+
+    let avgInterviewScore = 0;
+    if (allInterviews.length > 0) {
+      const totalScore = allInterviews.reduce((sum, iv) => sum + (iv.report?.overallScore || 0), 0);
+      avgInterviewScore = Math.round(totalScore / allInterviews.length);
+    }
+
     const stats = {
-      resumeScore: 0,
-      jobApplications: 0,
-      activeInterviews: 0,
-      interviewScore: 0,
-      atsScore: 0,
-      aiCreditsUsed: 0,
-      weeklyProgress: 0,
+      resumeScore: latestResume?.analysis?.overallScore || 0,
+      jobApplications,
+      activeInterviews,
+      interviewScore: avgInterviewScore,
+      atsScore: latestResume?.analysis?.atsScore || 0,
+      aiCreditsUsed: aiCredits,
+      weeklyProgress: 0, // Placeholder for weekly progress bar logic
       profileCompletion: calculateProfileCompletion(user),
       recentActivities: [],
     };

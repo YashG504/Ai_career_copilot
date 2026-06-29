@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { learningAPI } from '@/lib/api';
-import { CheckCircle2, Circle, PlayCircle, BookOpen, Clock, Target } from 'lucide-react';
+import { CheckCircle2, Circle, PlayCircle, BookOpen, Clock, Target, History } from 'lucide-react';
 
 type View = 'form' | 'roadmap' | 'history';
 
@@ -130,8 +130,8 @@ export default function LearningCenterPage() {
             </Button>
           )}
           {view !== 'history' && (
-            <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full">
-              📜 My Paths
+            <Button variant="outline" onClick={() => { fetchHistory(); setView('history'); }} className="rounded-full flex items-center gap-2">
+              <History className="w-4 h-4" /> My Paths
             </Button>
           )}
         </div>
@@ -197,7 +197,7 @@ export default function LearningCenterPage() {
                 </div>
 
                 {error && (
-                  <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                     {error}
                   </div>
                 )}
@@ -213,7 +213,7 @@ export default function LearningCenterPage() {
                       Crafting your personalized roadmap...
                     </span>
                   ) : (
-                    '🚀 Generate Learning Path'
+                    <span className="flex items-center justify-center gap-2"><Target className="w-5 h-5" /> Generate Learning Path</span>
                   )}
                 </Button>
               </CardContent>
@@ -230,7 +230,7 @@ export default function LearningCenterPage() {
                 <motion.div 
                   className="h-full bg-primary" 
                   initial={{ width: 0 }} 
-                  animate={{ width: \`\${path.progress}%\` }} 
+                  animate={{ width: `${path.progress}%` }} 
                   transition={{ duration: 1, type: 'spring' }}
                 />
               </div>
@@ -289,16 +289,16 @@ export default function LearningCenterPage() {
                     )}
                     
                     {/* Day Node */}
-                    <div className={\`absolute left-6 md:left-8 top-4 flex items-center justify-center w-8 h-8 rounded-full -translate-x-1/2 ring-4 ring-background \${
+                    <div className={`absolute left-6 md:left-8 top-4 flex items-center justify-center w-8 h-8 rounded-full -translate-x-1/2 ring-4 ring-background ${
                       isDayComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground border-2 border-border'
-                    }\`}>
+                    }`}>
                       <span className="text-xs font-bold">{day.dayNumber}</span>
                     </div>
 
-                    <Card className={\`border-border/50 transition-colors \${isDayComplete ? 'bg-card/30 border-primary/20' : 'bg-card/80 hover:border-primary/30'}\`}>
+                    <Card className={`border-border/50 transition-colors ${isDayComplete ? 'bg-card/30 border-primary/20' : 'bg-card/80 hover:border-primary/30'}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className={\`text-lg \${isDayComplete ? 'text-muted-foreground line-through' : ''}\`}>
+                          <CardTitle className={`text-lg ${isDayComplete ? 'text-muted-foreground line-through' : ''}`}>
                             Day {day.dayNumber}: {day.theme}
                           </CardTitle>
                           {isDayComplete && <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Completed</span>}
@@ -311,20 +311,20 @@ export default function LearningCenterPage() {
                           {day.tasks?.map((task: any) => (
                             <div 
                               key={task._id} 
-                              className={\`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 \${
+                              className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 ${
                                 task.isCompleted ? 'bg-muted/30 border-primary/20' : 'bg-background border-border/50'
-                              }\`}
+                              }`}
                               onClick={() => toggleTask(day.dayNumber, task._id, task.isCompleted)}
                             >
-                              <button className={\`mt-0.5 shrink-0 \${task.isCompleted ? 'text-primary' : 'text-muted-foreground hover:text-primary'}\`}>
+                              <button className={`mt-0.5 shrink-0 ${task.isCompleted ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}>
                                 {task.isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                               </button>
                               <div>
-                                <p className={\`font-medium text-sm \${task.isCompleted ? 'text-muted-foreground line-through' : ''}\`}>
+                                <p className={`font-medium text-sm ${task.isCompleted ? 'text-muted-foreground line-through' : ''}`}>
                                   {task.title}
                                 </p>
                                 {task.description && (
-                                  <p className={\`text-xs mt-1 \${task.isCompleted ? 'text-muted-foreground/60' : 'text-muted-foreground'}\`}>
+                                  <p className={`text-xs mt-1 ${task.isCompleted ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
                                     {task.description}
                                   </p>
                                 )}
@@ -341,7 +341,7 @@ export default function LearningCenterPage() {
                               {day.resources.map((res: any, idx: number) => (
                                 <a
                                   key={idx}
-                                  href={res.url.startsWith('http') ? res.url : \`https://www.google.com/search?q=\${encodeURIComponent(res.url)}\`}
+                                  href={res.url.startsWith('http') ? res.url : `https://www.google.com/search?q=${encodeURIComponent(res.url)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 hover:text-primary transition-colors text-xs font-medium border border-border/50"
@@ -390,7 +390,7 @@ export default function LearningCenterPage() {
                           </div>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-4">
-                          <div className="h-full bg-primary" style={{ width: \`\${p.progress}%\` }} />
+                          <div className="h-full bg-primary" style={{ width: `${p.progress}%` }} />
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>

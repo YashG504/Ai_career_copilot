@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
 import { profileAPI } from '@/lib/api';
+import { CheckCircle2, Briefcase, GraduationCap } from 'lucide-react';
 
 interface ProfileData {
   name: string;
@@ -134,9 +135,9 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-3 text-sm text-emerald-400"
+          className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-primary flex items-center"
         >
-          ✅ {success}
+          <CheckCircle2 className="w-4 h-4 mr-2" /> {success}
         </motion.div>
       )}
       {error && (
@@ -282,8 +283,8 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 {profile.experience.map((exp, i) => (
                   <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/30 border border-border/30">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-lg">
-                      💼
+                    <div className="h-10 w-10 rounded-lg bg-muted text-primary flex items-center justify-center">
+                      <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
                       <p className="font-medium">{exp.title}</p>
@@ -296,8 +297,8 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <span className="text-3xl mb-2 block">💼</span>
+              <div className="text-center py-8 flex flex-col items-center">
+                <Briefcase className="w-10 h-10 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">No experience added yet.</p>
               </div>
             )}
@@ -320,8 +321,8 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 {profile.education.map((edu, i) => (
                   <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/30 border border-border/30">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-lg">
-                      🎓
+                    <div className="h-10 w-10 rounded-lg bg-muted text-primary flex items-center justify-center">
+                      <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
                       <p className="font-medium">{edu.degree}</p>
@@ -334,8 +335,8 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <span className="text-3xl mb-2 block">🎓</span>
+              <div className="text-center py-8 flex flex-col items-center">
+                <GraduationCap className="w-10 h-10 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">No education added yet.</p>
               </div>
             )}

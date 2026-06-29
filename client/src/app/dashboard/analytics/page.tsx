@@ -7,7 +7,7 @@ import { analyticsAPI } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, AreaChart, Area } from 'recharts';
 import { Briefcase, Activity, Code2, BrainCircuit } from 'lucide-react';
 
-const COLORS = ['#3b82f6', '#f59e0b', '#a855f7', '#10b981', '#ef4444'];
+const COLORS = ['#171717', '#404040', '#737373', '#a3a3a3', '#d4d4d4'];
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Total Applications</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500"><Briefcase className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><Briefcase className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{data.jobStats.total}</span>
           </CardContent>
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Avg Interview Score</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500"><Activity className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><Activity className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{data.avgInterviewScore || '--'}</span>
           </CardContent>
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Latest ATS Score</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500"><Code2 className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><Code2 className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{data.resumeScore || '--'}</span>
           </CardContent>
@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-muted-foreground">Total AI Generations</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500"><BrainCircuit className="w-5 h-5" /></span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-primary"><BrainCircuit className="w-5 h-5" /></span>
             </div>
             <span className="text-3xl font-bold">{data.aiUsage.reduce((acc: number, curr: any) => acc + curr.value, 0)}</span>
           </CardContent>
@@ -104,8 +104,8 @@ export default function AnalyticsPage() {
             {funnelData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={funnelData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({name, value}) => \`\${name} (\${value})\`}>
-                    {funnelData.map((entry, index) => <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} />)}
+                  <Pie data={funnelData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({name, value}) => `${name} (${value})`}>
+                    {funnelData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                 </PieChart>
@@ -124,15 +124,15 @@ export default function AnalyticsPage() {
               <AreaChart data={data.weeklyApplications}>
                 <defs>
                   <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#737373" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#737373" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dx={-10} allowDecimals={false} />
                 <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                <Area type="monotone" dataKey="applications" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" />
+                <Area type="monotone" dataKey="applications" stroke="#737373" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dx={-10} />
                   <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                  <Line type="monotone" dataKey="score" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7' }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="score" stroke="#737373" strokeWidth={3} dot={{ r: 4, fill: '#737373' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} allowDecimals={false} />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" fill="#737373" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
+const pdfParse = require('pdf-parse-new');
+// Use mammoth for DOCX extraction (loaded dynamically to avoid type issues)
+const mammoth: any = require('mammoth');
 import Resume from '../models/Resume';
-import { analyzeResumeWithAI, compareResumesWithAI } from '../services/aiService';
+import { analyzeResumeWithAI, analyzeResumeWithAIVision, compareResumesWithAI } from '../services/aiService';
 
 // @desc    Upload a resume
 // @route   POST /api/resume/upload
@@ -21,9 +23,24 @@ export const uploadResumeFile = async (req: Request, res: Response): Promise<voi
       const dataBuffer = fs.readFileSync(req.file.path);
       const pdfData = await pdfParse(dataBuffer);
       extractedText = pdfData.text;
+    } else if (
+      req.file.mimetype ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      path.extname(req.file.originalname).toLowerCase() === '.docx'
+    ) {
+      try {
+        const result = await mammoth.extractRawText({ path: req.file.path });
+        extractedText = (result && result.value) ? result.value : '';
+      } catch (err) {
+        console.warn('DOCX extraction failed:', err);
+        extractedText = '';
+      }
+    } else if (req.file.mimetype === 'application/msword' || path.extname(req.file.originalname).toLowerCase() === '.doc') {
+      // Legacy .doc files are not reliably supported here
+      res.status(400).json({ success: false, message: 'Legacy .doc files are not supported. Please convert to .docx or PDF and try again.' });
+      return;
     } else {
-      // For DOCX, store raw — text extraction can be improved later
-      extractedText = '[DOCX file — text extraction pending]';
+      extractedText = '';
     }
 
     // Calculate version number
@@ -43,7 +60,7 @@ export const uploadResumeFile = async (req: Request, res: Response): Promise<voi
     res.status(201).json({ success: true, data: resume });
   } catch (error: any) {
     console.error('Upload error:', error);
-    res.status(500).json({ success: false, message: 'Failed to upload resume' });
+    res.status(500).json({ success: false, message: 'Failed to upload resume', error: error?.message || String(error) });
   }
 };
 
@@ -78,6 +95,30 @@ export const getResume = async (req: Request, res: Response): Promise<void> => {
     }
 
     res.status(200).json({ success: true, data: resume });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Download resume file
+// @route   GET /api/resume/:id/download
+// @access  Private
+export const downloadResume = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const resume = await Resume.findOne({ _id: req.params.id, user: req.user?._id });
+
+    if (!resume) {
+      res.status(404).json({ success: false, message: 'Resume not found' });
+      return;
+    }
+
+    const filePath = path.join(__dirname, '..', 'uploads', resume.fileName);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ success: false, message: 'File not found on server' });
+      return;
+    }
+
+    res.download(filePath, resume.originalName);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -127,15 +168,25 @@ export const analyzeResume = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!resume.extractedText || resume.extractedText.length < 50) {
-      res.status(400).json({
-        success: false,
-        message: 'Resume text could not be extracted. Please upload a valid PDF.',
-      });
-      return;
-    }
+    let analysis;
 
-    const analysis = await analyzeResumeWithAI(resume.extractedText);
+    if (!resume.extractedText || resume.extractedText.length < 50) {
+      // If text extraction failed (e.g. image PDF), use Gemini Vision OCR
+      const filePath = path.join(__dirname, '..', 'uploads', resume.fileName);
+      if (fs.existsSync(filePath)) {
+        const fileBuffer = fs.readFileSync(filePath);
+        analysis = await analyzeResumeWithAIVision(fileBuffer, resume.fileType);
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Resume text could not be extracted and original file is missing.',
+        });
+        return;
+      }
+    } else {
+      // Use standard text-based analysis
+      analysis = await analyzeResumeWithAI(resume.extractedText);
+    }
 
     if (!analysis) {
       res.status(500).json({ success: false, message: 'AI analysis failed' });

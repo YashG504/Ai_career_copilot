@@ -15,8 +15,9 @@ export const analyzePortfolio = async (req: Request, res: Response): Promise<voi
     }
 
     // Fetch public repos from GitHub API
-    // Using fetch to get the top 10 most recently updated repos
-    const githubRes = await fetch(`https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=10`, {
+    // Use global fetch if available, otherwise fall back to node-fetch
+    const fetchFn = (global as any).fetch || require('node-fetch');
+    const githubRes = await fetchFn(`https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=10`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'AI-Career-Copilot'

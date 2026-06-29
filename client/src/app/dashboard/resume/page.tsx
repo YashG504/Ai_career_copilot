@@ -6,6 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { resumeAPI } from '@/lib/api';
+import { FileText, Inbox, CheckCircle2, AlertTriangle, Monitor, Star, Plus, Minus, ArrowRight, Brain, TrendingUp, LayoutDashboard } from 'lucide-react';
 
 interface ResumeItem {
   _id: string;
@@ -49,10 +50,18 @@ export default function ResumeCenterPage() {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
+    const file = acceptedFiles[0]!;
+    
+    // Explicitly reject .doc
+    if (file.name.toLowerCase().endsWith('.doc')) {
+      alert('Legacy .doc files are not supported. Please save your file as .docx or .pdf and try again.');
+      return;
+    }
+    
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('resume', acceptedFiles[0]!);
+      formData.append('resume', file);
       await resumeAPI.upload(formData);
       await fetchResumes();
     } catch (err: any) {
@@ -181,7 +190,7 @@ export default function ResumeCenterPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <span className="text-5xl">📄</span>
+                    <FileText className="w-12 h-12 text-muted-foreground" />
                     <div>
                       <p className="text-lg font-medium">
                         {isDragActive ? 'Drop your resume here!' : 'Drag & drop your resume here'}
@@ -202,7 +211,7 @@ export default function ResumeCenterPage() {
             {resumes.length === 0 ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <span className="text-5xl mb-3">📭</span>
+                  <Inbox className="w-12 h-12 text-muted-foreground mb-3" />
                   <p className="text-lg font-medium mb-1">No resumes uploaded yet</p>
                   <p className="text-muted-foreground text-sm">Upload your first resume to get started with AI analysis.</p>
                 </CardContent>
@@ -245,8 +254,8 @@ export default function ResumeCenterPage() {
                         )}
 
                         {/* File icon */}
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg shrink-0">
-                          📄
+                        <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-lg shrink-0">
+                          <FileText className="w-5 h-5 text-primary" />
                         </div>
 
                         {/* Info */}
@@ -260,7 +269,7 @@ export default function ResumeCenterPage() {
 
                         {/* ATS Badge */}
                         {resume.isAnalyzed && resume.analysis && (
-                          <div className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1">
+                          <div className="shrink-0 flex items-center gap-1.5 rounded-full bg-muted border border-border px-3 py-1">
                             <span className="text-xs font-medium text-primary">
                               ATS: {resume.analysis.atsScore}/100
                             </span>
@@ -291,7 +300,7 @@ export default function ResumeCenterPage() {
                                   Analyzing...
                                 </span>
                               ) : (
-                                '🧠 Analyze with AI'
+                                <span className="flex items-center gap-1.5"><Brain className="w-4 h-4" /> Analyze with AI</span>
                               )}
                             </Button>
                           )}
@@ -327,9 +336,9 @@ export default function ResumeCenterPage() {
 
 function ScoreBadge({ score, label }: { score: number; label: string }) {
   const color =
-    score >= 80 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
-    : score >= 60 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
-    : 'text-red-400 border-red-500/30 bg-red-500/10';
+    score >= 80 ? 'text-primary border-primary bg-muted/20'
+    : score >= 60 ? 'text-primary border-border bg-muted/10'
+    : 'text-primary opacity-80 border-border bg-transparent';
 
   return (
     <div className={`flex flex-col items-center gap-1 rounded-2xl border p-5 ${color}`}>
@@ -367,26 +376,26 @@ function AnalysisView({ resume }: { resume: any }) {
 
       {/* Strengths & Weaknesses */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card className="border-emerald-500/20 bg-emerald-500/5">
-          <CardHeader><CardTitle className="text-lg text-emerald-400">✅ Strengths</CardTitle></CardHeader>
+        <Card className="border-border bg-card">
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-primary" /> Strengths</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {analysis.strengths?.map((s: string, i: number) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="text-emerald-400 mt-0.5">•</span>
+                  <span className="text-primary mt-0.5">•</span>
                   <span className="text-muted-foreground">{s}</span>
                 </li>
               ))}
             </ul>
           </CardContent>
         </Card>
-        <Card className="border-red-500/20 bg-red-500/5">
-          <CardHeader><CardTitle className="text-lg text-red-400">⚠️ Weaknesses</CardTitle></CardHeader>
+        <Card className="border-border bg-card">
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-primary" /> Weaknesses</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {analysis.weaknesses?.map((w: string, i: number) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="text-red-400 mt-0.5">•</span>
+                  <span className="text-primary mt-0.5">•</span>
                   <span className="text-muted-foreground">{w}</span>
                 </li>
               ))}
@@ -398,11 +407,11 @@ function AnalysisView({ resume }: { resume: any }) {
       {/* Skills */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="border-border/50 bg-card/80">
-          <CardHeader><CardTitle className="text-lg">💻 Technical Skills Found</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Monitor className="w-5 h-5" /> Technical Skills</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {analysis.technicalSkills?.map((skill: string, i: number) => (
-                <span key={i} className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs text-primary">
+                <span key={i} className="rounded-full bg-muted border border-border px-3 py-1 text-xs text-primary">
                   {skill}
                 </span>
               ))}
@@ -410,11 +419,11 @@ function AnalysisView({ resume }: { resume: any }) {
           </CardContent>
         </Card>
         <Card className="border-border/50 bg-card/80">
-          <CardHeader><CardTitle className="text-lg">🤝 Soft Skills</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Star className="w-5 h-5" /> Soft Skills</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {analysis.softSkills?.map((skill: string, i: number) => (
-                <span key={i} className="rounded-full bg-chart-2/10 border border-chart-2/20 px-3 py-1 text-xs text-chart-2">
+                <span key={i} className="rounded-full bg-muted border border-border px-3 py-1 text-xs text-primary">
                   {skill}
                 </span>
               ))}
@@ -424,12 +433,12 @@ function AnalysisView({ resume }: { resume: any }) {
       </div>
 
       {/* Missing Keywords */}
-      <Card className="border-amber-500/20 bg-amber-500/5">
-        <CardHeader><CardTitle className="text-lg text-amber-400">🔑 Missing Keywords</CardTitle></CardHeader>
+      <Card className="border-border bg-muted/20">
+        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Missing Keywords</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {analysis.missingKeywords?.map((kw: string, i: number) => (
-              <span key={i} className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs text-amber-400">
+              <span key={i} className="rounded-full bg-muted border border-border px-3 py-1 text-xs text-primary">
                 + {kw}
               </span>
             ))}
@@ -439,12 +448,12 @@ function AnalysisView({ resume }: { resume: any }) {
 
       {/* Improvements */}
       <Card className="border-border/50 bg-card/80">
-        <CardHeader><CardTitle className="text-lg">🚀 Improvements</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Improvements</CardTitle></CardHeader>
         <CardContent>
           <ul className="space-y-3">
             {analysis.improvements?.map((imp: string, i: number) => (
               <li key={i} className="flex items-start gap-3 text-sm">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-primary text-xs font-bold shrink-0">
                   {i + 1}
                 </span>
                 <span className="text-muted-foreground">{imp}</span>
@@ -457,24 +466,24 @@ function AnalysisView({ resume }: { resume: any }) {
       {/* Grammar & Formatting */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="border-border/50 bg-card/80">
-          <CardHeader><CardTitle className="text-lg">📝 Grammar Issues</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Grammar Issues</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {analysis.grammarIssues?.map((g: string, i: number) => (
                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="text-amber-400 mt-0.5">•</span>{g}
+                  <span className="text-primary mt-0.5">•</span>{g}
                 </li>
               ))}
             </ul>
           </CardContent>
         </Card>
         <Card className="border-border/50 bg-card/80">
-          <CardHeader><CardTitle className="text-lg">🎨 Formatting Suggestions</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><LayoutDashboard className="w-5 h-5" /> Formatting</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {analysis.formattingSuggestions?.map((f: string, i: number) => (
                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="text-chart-2 mt-0.5">•</span>{f}
+                  <span className="text-primary mt-0.5">•</span>{f}
                 </li>
               ))}
             </ul>
@@ -515,9 +524,9 @@ function CompareView({ data }: { data: any }) {
       {/* Comparison Result */}
       {comparison && (
         <>
-          <Card className={`border-border/50 ${comparison.overallImprovement > 0 ? 'bg-emerald-500/5 border-emerald-500/20' : comparison.overallImprovement < 0 ? 'bg-red-500/5 border-red-500/20' : 'bg-card/80'}`}>
+          <Card className={`border-border/50 bg-card/80`}>
             <CardContent className="text-center py-6">
-              <span className={`text-4xl font-bold ${comparison.overallImprovement > 0 ? 'text-emerald-400' : comparison.overallImprovement < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+              <span className={`text-4xl font-bold text-primary`}>
                 {comparison.overallImprovement > 0 ? '+' : ''}{comparison.overallImprovement}%
               </span>
               <p className="text-sm text-muted-foreground mt-2">Overall Improvement</p>
@@ -525,30 +534,30 @@ function CompareView({ data }: { data: any }) {
           </Card>
 
           <Card className="border-border/50 bg-card/80">
-            <CardHeader><CardTitle className="text-lg">📋 Summary</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Summary</CardTitle></CardHeader>
             <CardContent><p className="text-muted-foreground">{comparison.summary}</p></CardContent>
           </Card>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <Card className="border-emerald-500/20 bg-emerald-500/5">
-              <CardHeader><CardTitle className="text-lg text-emerald-400">✅ Improvements</CardTitle></CardHeader>
+            <Card className="border-border bg-muted/20">
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Improvements</CardTitle></CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {comparison.improvements?.map((item: string, i: number) => (
                     <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-emerald-400 mt-0.5">+</span>{item}
+                      <Plus className="w-4 h-4 mt-0.5 shrink-0" />{item}
                     </li>
                   ))}
                 </ul>
               </CardContent>
             </Card>
             <Card className="border-border/50 bg-card/80">
-              <CardHeader><CardTitle className="text-lg">💡 Recommendations</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Recommendations</CardTitle></CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {comparison.recommendations?.map((item: string, i: number) => (
                     <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-primary mt-0.5">→</span>{item}
+                      <ArrowRight className="w-4 h-4 mt-0.5 shrink-0" />{item}
                     </li>
                   ))}
                 </ul>

@@ -24,7 +24,7 @@ export const generateCoverLetter = async (req: Request, res: Response): Promise<
 
     // Generate AI Cover Letter
     const content = await generateCoverLetterAI(
-      resume.parsedText || 'No resume text available',
+      resume.extractedText || 'No resume text available',
       jobDescription,
       companyName,
       jobTitle

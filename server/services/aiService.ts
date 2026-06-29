@@ -60,7 +60,7 @@ export async function analyzeResumeWithAI(resumeText: string): Promise<IResumeAn
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const result = await model.generateContent(ANALYSIS_PROMPT + resumeText);
     const responseText = result.response.text();
@@ -90,6 +90,52 @@ export async function analyzeResumeWithAI(resumeText: string): Promise<IResumeAn
   }
 }
 
+export async function analyzeResumeWithAIVision(fileBuffer: Buffer, mimeType: string): Promise<IResumeAnalysis | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn('⚠️ GEMINI_API_KEY not set. Returning mock analysis.');
+    return getMockAnalysis();
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const result = await model.generateContent([
+      ANALYSIS_PROMPT + "\n[The resume is provided as an image/pdf below. Please extract the text and analyze it according to the instructions.]",
+      {
+        inlineData: {
+          data: fileBuffer.toString('base64'),
+          mimeType
+        }
+      }
+    ]);
+    const responseText = result.response.text();
+
+    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const analysis = JSON.parse(cleaned);
+
+    return {
+      atsScore: analysis.atsScore || 0,
+      overallScore: analysis.overallScore || 0,
+      summary: analysis.summary || '',
+      strengths: analysis.strengths || [],
+      weaknesses: analysis.weaknesses || [],
+      missingKeywords: analysis.missingKeywords || [],
+      technicalSkills: analysis.technicalSkills || [],
+      softSkills: analysis.softSkills || [],
+      grammarIssues: analysis.grammarIssues || [],
+      formattingSuggestions: analysis.formattingSuggestions || [],
+      improvements: analysis.improvements || [],
+      experienceLevel: analysis.experienceLevel || 'entry-level',
+      analyzedAt: new Date(),
+    };
+  } catch (error) {
+    console.error('Gemini Vision API Error:', error);
+    return getMockAnalysis();
+  }
+}
+
 export async function compareResumesWithAI(
   resumeV1Text: string,
   resumeV2Text: string
@@ -108,7 +154,7 @@ export async function compareResumesWithAI(
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = COMPARISON_PROMPT
       .replace('{RESUME_V1}', resumeV1Text)
@@ -220,7 +266,7 @@ export async function matchJobWithResumeAI(
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = JOB_MATCH_PROMPT
       .replace('{RESUME_TEXT}', resumeText)
@@ -311,7 +357,7 @@ Include 2-3 tasks per day and 1-2 resources per day.`;
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(text);
@@ -364,7 +410,7 @@ Return a valid JSON array of strings (no markdown, no code fences, just raw JSON
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(text);
@@ -407,7 +453,7 @@ Be fair but thorough. Score based on:
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(text);
@@ -461,7 +507,7 @@ Return a valid JSON object (no markdown, no code fences):
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const report = JSON.parse(text);
@@ -549,7 +595,7 @@ ${jobDescription}`;
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(text);
@@ -621,7 +667,7 @@ Return a valid JSON object (no markdown, no code fences):
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(text);
@@ -664,7 +710,7 @@ Return ONLY the raw text of the cover letter. No JSON, no markdown, no code fenc
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
   } catch (error) {

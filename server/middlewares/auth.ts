@@ -57,11 +57,4 @@ export const protect = async (
   }
 };
 
-// Admin middleware
-export const admin = (req: Request, res: Response, next: NextFunction): void => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ success: false, message: 'Not authorized as admin' });
-  }
-};
+// Note: admin middleware is implemented in middlewares/admin.ts
