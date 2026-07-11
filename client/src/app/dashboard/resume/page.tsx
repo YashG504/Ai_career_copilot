@@ -137,8 +137,8 @@ export default function ResumeCenterPage() {
     setCompareIds((prev) => {
       if (prev.includes(id)) return prev.filter((i) => i !== id) as [string?, string?];
       if (prev.filter(Boolean).length >= 2) return prev;
-      const next = [...prev.filter(Boolean), id] as [string?, string?];
-      return next;
+      const filtered = prev.filter(Boolean);
+      return [filtered[0], id] as [string?, string?];
     });
   };
 

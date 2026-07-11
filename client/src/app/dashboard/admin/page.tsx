@@ -155,7 +155,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-// Need to import AlertCircle and Button since they are used in the error state
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';

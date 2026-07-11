@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { portfolioAPI } from '@/lib/api';
-import { GitBranch, Code2, AlertTriangle, Lightbulb, Trash2, History, CheckCircle2 } from 'lucide-react';
+import { GitBranch, Code2, AlertTriangle, Lightbulb, Trash2, History, CheckCircle2, GitFork } from 'lucide-react';
 
 export default function PortfolioAnalyzerPage() {
   const [view, setView] = useState<'form' | 'result' | 'history'>('form');
@@ -176,7 +176,7 @@ export default function PortfolioAnalyzerPage() {
             {history.length === 0 ? (
               <Card className="border-border/50 bg-card/80">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <Github className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                  <GitFork className="w-16 h-16 text-muted-foreground/30 mb-4" />
                   <p className="text-lg font-medium mb-1">No portfolios analyzed</p>
                   <p className="text-muted-foreground text-sm">Analyze a GitHub profile to see history.</p>
                 </CardContent>
@@ -189,7 +189,7 @@ export default function PortfolioAnalyzerPage() {
                       <CardContent className="p-5 flex items-center justify-between">
                         <div>
                           <h3 className="font-bold text-lg flex items-center gap-2 group-hover:text-primary transition-colors">
-                            <Github className="w-5 h-5" /> {p.githubUsername}
+                            <GitFork className="w-5 h-5" /> {p.githubUsername}
                           </h3>
                           <p className="text-xs text-muted-foreground mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
                         </div>

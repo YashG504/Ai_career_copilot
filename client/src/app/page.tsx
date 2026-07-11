@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 import { FileText, Target, Mic, LayoutDashboard, Brain, TrendingUp } from 'lucide-react';
 
@@ -75,9 +76,9 @@ export default function Home() {
           >
             Log in
           </Link>
-          <Button asChild size="sm" className="rounded-full px-5">
-            <Link href="/signup">Get Started Free</Link>
-          </Button>
+          <Link href="/signup" className={cn(buttonVariants({ size: "sm" }), "rounded-full px-5")}>
+            Get Started Free
+          </Link>
         </nav>
       </motion.header>
 
@@ -130,12 +131,12 @@ export default function Home() {
                 transition={{ duration: 0.6 }}
                 className="flex flex-col sm:flex-row gap-4"
               >
-                <Button asChild size="lg" className="rounded-full px-8 text-base animate-pulse-glow">
-                  <Link href="/signup">Start Free — No Credit Card</Link>
-                </Button>
-                <Button variant="outline" asChild size="lg" className="rounded-full px-8 text-base">
-                  <Link href="/login">Sign In →</Link>
-                </Button>
+                <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "rounded-full px-8 text-base animate-pulse-glow")}>
+                  Start Free — No Credit Card
+                </Link>
+                <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-full px-8 text-base")}>
+                  Sign In →
+                </Link>
               </motion.div>
 
               {/* Stats */}
@@ -229,9 +230,9 @@ export default function Home() {
               <p className="text-muted-foreground mb-8 max-w-[500px] mx-auto relative z-10">
                 Join thousands of professionals who landed their dream jobs with AI Career Copilot.
               </p>
-              <Button asChild size="lg" className="rounded-full px-10 text-base relative z-10">
-                <Link href="/signup">Get Started for Free</Link>
-              </Button>
+              <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "rounded-full px-10 text-base relative z-10")}>
+                Get Started for Free
+              </Link>
             </motion.div>
           </div>
         </section>
