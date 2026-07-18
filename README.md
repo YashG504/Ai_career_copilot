@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge" alt="Status" />
-  <h1>🚀 AI Career Copilot</h1>
+  <h1> AI Career Copilot</h1>
   <p><strong>An advanced, end-to-end career acceleration platform powered by Generative AI.</strong></p>
   
   <p>
@@ -15,13 +15,13 @@
 
 ---
 
-## 📖 Overview
+##  Overview
 
 **AI Career Copilot** is a full-stack platform designed to automate and optimize the job search process. By leveraging the power of Google's Gemini 2.5 Flash LLM, the platform acts as a personal career advisor—parsing resumes, generating personalized learning paths, simulating technical interviews, and finding skill gaps for targeted job roles.
 
 This project was built with a strong emphasis on **performance, security, and scalable system architecture.**
 
-## ✨ Core Features
+##  Core Features
 
 - 📄 **Smart Resume Analysis:** Upload PDFs/DOCXs. The AI uses **Prompt Chaining** to accurately extract facts and score your resume against ATS criteria.
 - 🎯 **Job Match Analyzer:** Compare your resume against specific job descriptions to uncover missing keywords.
@@ -32,7 +32,7 @@ This project was built with a strong emphasis on **performance, security, and sc
 
 ---
 
-## 🏗️ Technical Architecture (The "Under the Hood")
+##  Technical Architecture (The "Under the Hood")
 
 This isn't just an API wrapper; it's engineered to scale in a production environment:
 
@@ -44,7 +44,7 @@ This isn't just an API wrapper; it's engineered to scale in a production environ
 
 ---
 
-## 💻 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Next.js (App Router)** for Server-Side Rendering (SSR) & Routing
@@ -61,7 +61,7 @@ This isn't just an API wrapper; it's engineered to scale in a production environ
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 Make sure you have Node.js and MongoDB installed on your local machine.
