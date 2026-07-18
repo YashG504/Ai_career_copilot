@@ -10,6 +10,8 @@ import {
 } from '../controllers/resumeController';
 import { protect } from '../middlewares/auth';
 import { uploadResume } from '../middlewares/upload';
+import { validate } from '../middlewares/validate';
+import { compareResumesSchema } from '../validators/resumeValidator';
 
 const router = Router();
 
@@ -19,6 +21,6 @@ router.get('/:id', protect, getResume);
 router.get('/:id/download', protect, downloadResume);
 router.delete('/:id', protect, deleteResume);
 router.post('/:id/analyze', protect, analyzeResume);
-router.post('/compare', protect, compareResumes);
+router.post('/compare', protect, validate(compareResumesSchema), compareResumes);
 
 export default router;

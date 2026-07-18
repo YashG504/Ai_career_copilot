@@ -40,5 +40,8 @@ const jobApplicationSchema = new Schema<IJobApplication>(
   { timestamps: true }
 );
 
+jobApplicationSchema.index({ user: 1, status: 1 });
+jobApplicationSchema.index({ user: 1, createdAt: -1 });
+
 const JobApplication = mongoose.model<IJobApplication>('JobApplication', jobApplicationSchema);
 export default JobApplication;

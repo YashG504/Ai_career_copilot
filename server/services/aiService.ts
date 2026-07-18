@@ -1,5 +1,68 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { IResumeAnalysis } from '../models/Resume';
+import { callGemini, parseGeminiJSON, isDev, getGeminiModel } from './geminiClient';
+
+// ─── Interfaces ────────────────────────────────────────────────────────────────
+
+export interface IResumeComparison {
+  overallImprovement: number;
+  atsScoreChange: number;
+  summary: string;
+  improvements: string[];
+  regressions: string[];
+  recommendations: string[];
+}
+
+export interface IJobMatchAnalysis {
+  summary: string;
+  matchScore: number;
+  matchingSkills: string[];
+  missingSkills: string[];
+  suggestedProjects: Array<{ title: string; description: string; skills: string[] }>;
+  resumeImprovements: string[];
+  keywordMatch: { found: string[]; missing: string[] };
+  experienceFit: string;
+  cultureFit: string;
+}
+
+export interface ILearningPathPlan {
+  days: Array<{
+    dayNumber: number;
+    theme: string;
+    tasks: Array<{ title: string; description: string }>;
+    resources: Array<{ title: string; url: string; type: string }>;
+  }>;
+}
+
+export interface IInterviewReport {
+  overallScore: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  roadmap: string[];
+  topicBreakdown: Array<{ topic: string; score: number; feedback: string }>;
+  generatedAt: Date;
+}
+
+export interface ISkillGapAnalysis {
+  summary: string;
+  currentSkills: string[];
+  requiredSkills: string[];
+  missingSkills: string[];
+  skillMatchPercentage: number;
+  learningRoadmap: Array<{ week: number; title: string; skills: string[]; tasks: string[]; resources: string[] }>;
+  recommendedCourses: Array<{ title: string; platform: string; url: string; skill: string }>;
+  suggestedProjects: Array<{ title: string; description: string; skills: string[]; difficulty: string }>;
+}
+
+export interface IPortfolioAnalysisResult {
+  score: number;
+  overallAdvice: string;
+  strengths: string[];
+  weaknesses: string[];
+  repoFeedback: Array<{ repoName: string; feedback: string }>;
+}
+
+// ─── Prompts ────────────────────────────────────────────────────────────────────
 
 const ANALYSIS_PROMPT = `You are an expert career advisor and ATS (Applicant Tracking System) specialist. Analyze the following resume text and provide a comprehensive evaluation.
 
@@ -51,123 +114,156 @@ RESUME V2:
 {RESUME_V2}
 `;
 
-export async function analyzeResumeWithAI(resumeText: string): Promise<IResumeAnalysis | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ GEMINI_API_KEY not set. Returning mock analysis.');
-    return getMockAnalysis();
+const JOB_MATCH_PROMPT = `You are an expert career advisor and recruiter. Compare the following resume against the job description and provide a detailed match analysis.
+
+Return your analysis as a valid JSON object with EXACTLY this structure (no markdown, no code fences, just raw JSON):
+{
+  "summary": "<2-3 sentence match summary>",
+  "matchScore": <number 0-100>,
+  "matchingSkills": ["<skill that matches>", ...],
+  "missingSkills": ["<skill the candidate is missing>", ...],
+  "suggestedProjects": [
+    {
+      "title": "<project name>",
+      "description": "<1-2 sentence description of a project to build>",
+      "skills": ["<skill this project demonstrates>", ...]
+    }
+  ],
+  "resumeImprovements": ["<specific improvement for this JD>", ...],
+  "keywordMatch": {
+    "found": ["<keyword from JD found in resume>", ...],
+    "missing": ["<keyword from JD missing in resume>", ...]
+  },
+  "experienceFit": "<strong fit | moderate fit | weak fit — with 1 sentence explanation>",
+  "cultureFit": "<1-2 sentence assessment of soft skill and culture alignment>"
+}
+
+Scoring criteria:
+- Skills overlap (40%)
+- Experience relevance (25%)
+- Keyword match (20%)
+- Education/certifications alignment (15%)
+
+Provide at least 3 items for matchingSkills, missingSkills, and resumeImprovements.
+Provide exactly 3 suggestedProjects that would help the candidate fill their skill gaps.
+
+RESUME TEXT:
+{RESUME_TEXT}
+
+JOB DESCRIPTION:
+{JOB_DESCRIPTION}
+`;
+
+// ─── Helper: Handle AI call with dev-mode mock fallback ─────────────────────────
+
+/**
+ * Wraps an AI call: tries real Gemini first, falls back to mock ONLY in dev mode.
+ * In production, throws the error so the controller can return a proper error response.
+ */
+async function withAIFallback<T>(
+  aiCall: () => Promise<T>,
+  mockFallback: () => T,
+  label: string
+): Promise<T> {
+  if (!getGeminiModel()) {
+    if (isDev()) {
+      console.warn(`⚠️ GEMINI_API_KEY not set. Returning mock ${label}. (dev mode only)`);
+      return mockFallback();
+    }
+    throw new Error('AI service is not configured. Please contact support.');
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const result = await model.generateContent(ANALYSIS_PROMPT + resumeText);
-    const responseText = result.response.text();
-
-    // Clean response - strip markdown code fences if present
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const analysis = JSON.parse(cleaned);
-
-    return {
-      atsScore: analysis.atsScore || 0,
-      overallScore: analysis.overallScore || 0,
-      summary: analysis.summary || '',
-      strengths: analysis.strengths || [],
-      weaknesses: analysis.weaknesses || [],
-      missingKeywords: analysis.missingKeywords || [],
-      technicalSkills: analysis.technicalSkills || [],
-      softSkills: analysis.softSkills || [],
-      grammarIssues: analysis.grammarIssues || [],
-      formattingSuggestions: analysis.formattingSuggestions || [],
-      improvements: analysis.improvements || [],
-      experienceLevel: analysis.experienceLevel || 'entry-level',
-      analyzedAt: new Date(),
-    };
+    return await aiCall();
   } catch (error) {
-    console.error('AI Analysis error:', error);
-    return getMockAnalysis();
+    console.error(`${label} error:`, error);
+    if (isDev()) {
+      console.warn(`⚠️ AI call failed. Returning mock ${label}. (dev mode only)`);
+      return mockFallback();
+    }
+    throw error;
   }
 }
 
+// ─── Resume Analysis ────────────────────────────────────────────────────────────
+
+function parseResumeAnalysis(analysis: any): IResumeAnalysis {
+  return {
+    atsScore: analysis.atsScore || 0,
+    overallScore: analysis.overallScore || 0,
+    summary: analysis.summary || '',
+    strengths: analysis.strengths || [],
+    weaknesses: analysis.weaknesses || [],
+    missingKeywords: analysis.missingKeywords || [],
+    technicalSkills: analysis.technicalSkills || [],
+    softSkills: analysis.softSkills || [],
+    grammarIssues: analysis.grammarIssues || [],
+    formattingSuggestions: analysis.formattingSuggestions || [],
+    improvements: analysis.improvements || [],
+    experienceLevel: analysis.experienceLevel || 'entry-level',
+    analyzedAt: new Date(),
+  };
+}
+
+export async function analyzeResumeWithAI(resumeText: string): Promise<IResumeAnalysis | null> {
+  return withAIFallback(
+    async () => {
+      // Prompt Chaining Step 1: Extract pure facts (reduces hallucinations)
+      const extractionPrompt = `You are a data extractor. Extract the raw facts from this resume, grouping them clearly into: Education, Experience, Skills, and Projects. Do not add any commentary or evaluation.\n\nRESUME:\n${resumeText}`;
+      const extractedFacts = await callGemini(extractionPrompt);
+
+      // Prompt Chaining Step 2 & 3: Analyze facts and format as JSON
+      const analysisPrompt = `${ANALYSIS_PROMPT}\n\nEXTRACTED FACTS TO ANALYZE:\n${extractedFacts}`;
+      const responseText = await callGemini(analysisPrompt);
+      
+      return parseResumeAnalysis(parseGeminiJSON(responseText));
+    },
+    getMockAnalysis,
+    'resume analysis'
+  );
+}
+
 export async function analyzeResumeWithAIVision(fileBuffer: Buffer, mimeType: string): Promise<IResumeAnalysis | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ GEMINI_API_KEY not set. Returning mock analysis.');
-    return getMockAnalysis();
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const result = await model.generateContent([
-      ANALYSIS_PROMPT + "\n[The resume is provided as an image/pdf below. Please extract the text and analyze it according to the instructions.]",
-      {
-        inlineData: {
-          data: fileBuffer.toString('base64'),
-          mimeType
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini([
+        ANALYSIS_PROMPT + "\n[The resume is provided as an image/pdf below. Please extract the text and analyze it according to the instructions.]",
+        {
+          inlineData: {
+            data: fileBuffer.toString('base64'),
+            mimeType
+          }
         }
-      }
-    ]);
-    const responseText = result.response.text();
-
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const analysis = JSON.parse(cleaned);
-
-    return {
-      atsScore: analysis.atsScore || 0,
-      overallScore: analysis.overallScore || 0,
-      summary: analysis.summary || '',
-      strengths: analysis.strengths || [],
-      weaknesses: analysis.weaknesses || [],
-      missingKeywords: analysis.missingKeywords || [],
-      technicalSkills: analysis.technicalSkills || [],
-      softSkills: analysis.softSkills || [],
-      grammarIssues: analysis.grammarIssues || [],
-      formattingSuggestions: analysis.formattingSuggestions || [],
-      improvements: analysis.improvements || [],
-      experienceLevel: analysis.experienceLevel || 'entry-level',
-      analyzedAt: new Date(),
-    };
-  } catch (error) {
-    console.error('Gemini Vision API Error:', error);
-    return getMockAnalysis();
-  }
+      ]);
+      return parseResumeAnalysis(parseGeminiJSON(responseText));
+    },
+    getMockAnalysis,
+    'resume vision analysis'
+  );
 }
 
 export async function compareResumesWithAI(
   resumeV1Text: string,
   resumeV2Text: string
-): Promise<any | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return {
+): Promise<IResumeComparison | null> {
+  return withAIFallback(
+    async () => {
+      const prompt = COMPARISON_PROMPT
+        .replace('{RESUME_V1}', resumeV1Text)
+        .replace('{RESUME_V2}', resumeV2Text);
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    () => ({
       overallImprovement: 0,
       atsScoreChange: 0,
-      summary: 'AI comparison requires a Gemini API key. Please configure GEMINI_API_KEY.',
+      summary: 'AI comparison is unavailable. Please try again.',
       improvements: [],
       regressions: [],
-      recommendations: ['Configure your Gemini API key to enable AI-powered comparison.'],
-    };
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const prompt = COMPARISON_PROMPT
-      .replace('{RESUME_V1}', resumeV1Text)
-      .replace('{RESUME_V2}', resumeV2Text);
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch (error) {
-    console.error('AI Comparison error:', error);
-    return null;
-  }
+      recommendations: [],
+    }),
+    'resume comparison'
+  );
 }
 
 function getMockAnalysis(): IResumeAnalysis {
@@ -214,109 +310,44 @@ function getMockAnalysis(): IResumeAnalysis {
 
 // ─── Job Match AI ────────────────────────────────────────────────────────────
 
-const JOB_MATCH_PROMPT = `You are an expert career advisor and recruiter. Compare the following resume against the job description and provide a detailed match analysis.
-
-Return your analysis as a valid JSON object with EXACTLY this structure (no markdown, no code fences, just raw JSON):
-{
-  "summary": "<2-3 sentence match summary>",
-  "matchScore": <number 0-100>,
-  "matchingSkills": ["<skill that matches>", ...],
-  "missingSkills": ["<skill the candidate is missing>", ...],
-  "suggestedProjects": [
-    {
-      "title": "<project name>",
-      "description": "<1-2 sentence description of a project to build>",
-      "skills": ["<skill this project demonstrates>", ...]
-    }
-  ],
-  "resumeImprovements": ["<specific improvement for this JD>", ...],
-  "keywordMatch": {
-    "found": ["<keyword from JD found in resume>", ...],
-    "missing": ["<keyword from JD missing in resume>", ...]
-  },
-  "experienceFit": "<strong fit | moderate fit | weak fit — with 1 sentence explanation>",
-  "cultureFit": "<1-2 sentence assessment of soft skill and culture alignment>"
-}
-
-Scoring criteria:
-- Skills overlap (40%)
-- Experience relevance (25%)
-- Keyword match (20%)
-- Education/certifications alignment (15%)
-
-Provide at least 3 items for matchingSkills, missingSkills, and resumeImprovements.
-Provide exactly 3 suggestedProjects that would help the candidate fill their skill gaps.
-
-RESUME TEXT:
-{RESUME_TEXT}
-
-JOB DESCRIPTION:
-{JOB_DESCRIPTION}
-`;
-
 export async function matchJobWithResumeAI(
   resumeText: string,
   jobDescription: string
-): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ GEMINI_API_KEY not set. Returning mock match.');
-    return getMockJobMatch();
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const prompt = JOB_MATCH_PROMPT
-      .replace('{RESUME_TEXT}', resumeText)
-      .replace('{JOB_DESCRIPTION}', jobDescription);
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch (error) {
-    console.error('Job Match AI error:', error);
-    return getMockJobMatch();
-  }
+): Promise<IJobMatchAnalysis> {
+  return withAIFallback(
+    async () => {
+      const prompt = JOB_MATCH_PROMPT
+        .replace('{RESUME_TEXT}', resumeText)
+        .replace('{JOB_DESCRIPTION}', jobDescription);
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    getMockJobMatch,
+    'job match'
+  );
 }
 
 function getMockJobMatch() {
   return {
-    summary: 'The candidate has some relevant skills but significant gaps exist in required technologies. Focus on building projects that demonstrate the missing competencies.',
+    summary: 'The candidate has some relevant skills but significant gaps exist in required technologies.',
     matchScore: 55,
     matchingSkills: ['JavaScript', 'React', 'Git', 'Problem Solving'],
     missingSkills: ['TypeScript', 'AWS', 'Docker', 'CI/CD', 'PostgreSQL', 'System Design'],
     suggestedProjects: [
-      {
-        title: 'Cloud-Deployed REST API',
-        description: 'Build a full REST API with Express/NestJS, deploy on AWS with Docker and CI/CD pipeline.',
-        skills: ['AWS', 'Docker', 'CI/CD', 'TypeScript'],
-      },
-      {
-        title: 'Real-time Dashboard',
-        description: 'Create a real-time analytics dashboard using WebSockets and PostgreSQL for data persistence.',
-        skills: ['PostgreSQL', 'WebSockets', 'TypeScript'],
-      },
-      {
-        title: 'Microservices Architecture',
-        description: 'Design and implement a microservices system with event-driven communication and container orchestration.',
-        skills: ['System Design', 'Docker', 'AWS'],
-      },
+      { title: 'Cloud-Deployed REST API', description: 'Build a full REST API with Express/NestJS, deploy on AWS with Docker.', skills: ['AWS', 'Docker', 'CI/CD', 'TypeScript'] },
+      { title: 'Real-time Dashboard', description: 'Create a real-time analytics dashboard using WebSockets and PostgreSQL.', skills: ['PostgreSQL', 'WebSockets', 'TypeScript'] },
+      { title: 'Microservices Architecture', description: 'Design and implement a microservices system with container orchestration.', skills: ['System Design', 'Docker', 'AWS'] },
     ],
     resumeImprovements: [
-      'Add TypeScript experience — mention it explicitly in your skills section',
-      'Include cloud deployment experience (AWS/GCP/Azure)',
-      'Quantify the impact of your projects with metrics',
-      'Add a "Technologies" subsection under each project',
+      'Add TypeScript experience explicitly', 'Include cloud deployment experience',
+      'Quantify project impact with metrics', 'Add a Technologies subsection under each project',
     ],
     keywordMatch: {
       found: ['JavaScript', 'React', 'Node.js', 'REST API', 'Git'],
-      missing: ['TypeScript', 'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'PostgreSQL', 'Agile', 'Scrum'],
+      missing: ['TypeScript', 'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'PostgreSQL'],
     },
-    experienceFit: 'Moderate fit — candidate has relevant frontend experience but lacks backend infrastructure and cloud skills required for this role.',
-    cultureFit: 'The candidate shows strong communication and teamwork skills which align well with collaborative team environments.',
+    experienceFit: 'Moderate fit — candidate has relevant frontend experience but lacks backend infrastructure skills.',
+    cultureFit: 'Strong communication and teamwork skills align well with collaborative environments.',
   };
 }
 
@@ -326,9 +357,7 @@ export async function generateLearningPathAI(
   goal: string,
   level: string,
   durationDays: number
-): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
+): Promise<ILearningPathPlan> {
   const prompt = `You are an expert technical mentor. Create a ${durationDays}-day learning roadmap for a ${level} developer aiming for this goal: "${goal}".
 
 Return a valid JSON object (no markdown, no code fences):
@@ -351,20 +380,14 @@ Ensure the array has exactly ${durationDays} items (one for each day).
 Make the progression logical from day 1 to day ${durationDays}.
 Include 2-3 tasks per day and 1-2 resources per day.`;
 
-  if (!apiKey) {
-    return getMockLearningPath(durationDays);
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Learning path error:', error);
-    return getMockLearningPath(durationDays);
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    () => getMockLearningPath(durationDays),
+    'learning path'
+  );
 }
 
 function getMockLearningPath(duration: number) {
@@ -384,6 +407,7 @@ function getMockLearningPath(duration: number) {
   }
   return { days };
 }
+
 // ─── Interview AI ────────────────────────────────────────────────────────────
 
 export async function generateInterviewQuestionsAI(
@@ -392,8 +416,6 @@ export async function generateInterviewQuestionsAI(
   difficulty: string,
   count: number = 5
 ): Promise<string[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
   const prompt = `You are an expert ${type === 'hr' ? 'HR interviewer' : `${domain} technical interviewer`}.
 Generate exactly ${count} ${difficulty} difficulty ${type} interview questions for a ${domain} developer role.
 
@@ -404,20 +426,14 @@ ${type === 'coding' ? 'Provide coding problems with clear input/output requireme
 Return a valid JSON array of strings (no markdown, no code fences, just raw JSON):
 ["question 1", "question 2", ...]`;
 
-  if (!apiKey) {
-    return getDefaultQuestions(domain, type, count);
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Generate questions error:', error);
-    return getDefaultQuestions(domain, type, count);
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON<string[]>(responseText);
+    },
+    () => getDefaultQuestions(domain, type, count),
+    'interview questions'
+  );
 }
 
 export async function evaluateAnswerAI(
@@ -426,8 +442,6 @@ export async function evaluateAnswerAI(
   domain: string,
   type: string
 ): Promise<{ score: number; feedback: string; strengths: string[]; improvements: string[] }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
   const prompt = `You are an expert ${domain} interviewer. Evaluate the following ${type} interview answer.
 
 Question: ${question}
@@ -447,29 +461,21 @@ Be fair but thorough. Score based on:
 - Communication clarity (20%)
 - Practical examples mentioned (15%)`;
 
-  if (!apiKey) {
-    return { score: 65, feedback: 'Good attempt. Configure Gemini API key for real evaluations.', strengths: ['Attempted the question'], improvements: ['Add more depth'] };
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Evaluate answer error:', error);
-    return { score: 60, feedback: 'Evaluation failed.', strengths: [], improvements: [] };
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    () => ({ score: 65, feedback: 'Good attempt. AI evaluation unavailable in dev mode.', strengths: ['Attempted the question'], improvements: ['Add more depth'] }),
+    'answer evaluation'
+  );
 }
 
 export async function generateInterviewReportAI(
   questions: { question: string; userAnswer: string; evaluation: any }[],
   domain: string,
   type: string
-): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
+): Promise<IInterviewReport> {
   const qaPairs = questions.map((q, i) =>
     `Q${i + 1}: ${q.question}\nAnswer: ${q.userAnswer}\nScore: ${q.evaluation?.score || 0}/100`
   ).join('\n\n');
@@ -494,29 +500,25 @@ Return a valid JSON object (no markdown, no code fences):
   ]
 }`;
 
-  if (!apiKey) {
-    const avgScore = questions.reduce((sum, q) => sum + (q.evaluation?.score || 0), 0) / questions.length;
-    return {
-      overallScore: Math.round(avgScore),
-      summary: 'Interview completed. Configure Gemini API key for detailed reports.',
-      strengths: ['Completed the interview'], weaknesses: ['Need more practice'],
-      roadmap: ['Practice daily', 'Study core concepts'], topicBreakdown: [],
-      generatedAt: new Date(),
-    };
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const report = JSON.parse(text);
-    report.generatedAt = new Date();
-    return report;
-  } catch (error) {
-    console.error('Generate report error:', error);
-    return null;
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      const report = parseGeminiJSON(responseText);
+      report.generatedAt = new Date();
+      return report;
+    },
+    () => {
+      const avgScore = questions.reduce((sum, q) => sum + (q.evaluation?.score || 0), 0) / questions.length;
+      return {
+        overallScore: Math.round(avgScore),
+        summary: 'Interview completed. AI report unavailable in dev mode.',
+        strengths: ['Completed the interview'], weaknesses: ['Need more practice'],
+        roadmap: ['Practice daily', 'Study core concepts'], topicBreakdown: [],
+        generatedAt: new Date(),
+      };
+    },
+    'interview report'
+  );
 }
 
 function getDefaultQuestions(domain: string, type: string, count: number): string[] {
@@ -539,9 +541,7 @@ export async function analyzeSkillGapAI(
   resumeText: string,
   jobDescription: string,
   jobTitle: string
-): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
+): Promise<ISkillGapAnalysis> {
   const prompt = `You are an expert career advisor. Analyze the skill gap between this candidate's resume and the target job.
 
 Return a valid JSON object (no markdown, no code fences):
@@ -552,34 +552,17 @@ Return a valid JSON object (no markdown, no code fences):
   "missingSkills": ["<skill the candidate is missing>", ...],
   "skillMatchPercentage": <number 0-100>,
   "learningRoadmap": [
-    {
-      "week": 1,
-      "title": "<week theme>",
-      "skills": ["<skill to learn>"],
-      "tasks": ["<daily task 1>", "<daily task 2>"],
-      "resources": ["<resource name or URL>"]
-    }
+    { "week": 1, "title": "<week theme>", "skills": ["<skill to learn>"], "tasks": ["<daily task 1>"], "resources": ["<resource name or URL>"] }
   ],
   "recommendedCourses": [
-    {
-      "title": "<course name>",
-      "platform": "<Udemy/Coursera/YouTube/etc>",
-      "url": "<URL or search query>",
-      "skill": "<skill it teaches>"
-    }
+    { "title": "<course name>", "platform": "<Udemy/Coursera/YouTube/etc>", "url": "<URL or search query>", "skill": "<skill it teaches>" }
   ],
   "suggestedProjects": [
-    {
-      "title": "<project name>",
-      "description": "<1-2 sentence description>",
-      "skills": ["<skill>"],
-      "difficulty": "<beginner/intermediate/advanced>"
-    }
+    { "title": "<project name>", "description": "<1-2 sentence description>", "skills": ["<skill>"], "difficulty": "<beginner/intermediate/advanced>" }
   ]
 }
 
-Provide a 4-week learning roadmap with 2-3 tasks per week.
-Provide at least 4 recommended courses and 3 suggested projects.
+Provide a 4-week learning roadmap, at least 4 courses, and 3 projects.
 
 TARGET ROLE: ${jobTitle || 'Software Developer'}
 
@@ -589,34 +572,28 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription}`;
 
-  if (!apiKey) {
-    return getMockSkillGap();
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Skill gap error:', error);
-    return getMockSkillGap();
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    getMockSkillGap,
+    'skill gap analysis'
+  );
 }
 
 function getMockSkillGap() {
   return {
-    summary: 'The candidate has foundational web development skills but lacks cloud, DevOps, and advanced backend expertise required for this role.',
+    summary: 'The candidate has foundational web development skills but lacks cloud, DevOps, and advanced backend expertise.',
     currentSkills: ['JavaScript', 'React', 'HTML/CSS', 'Git', 'Node.js'],
     requiredSkills: ['TypeScript', 'AWS', 'Docker', 'CI/CD', 'PostgreSQL', 'System Design', 'React', 'Node.js'],
     missingSkills: ['TypeScript', 'AWS', 'Docker', 'CI/CD', 'PostgreSQL', 'System Design'],
     skillMatchPercentage: 45,
     learningRoadmap: [
-      { week: 1, title: 'TypeScript Fundamentals', skills: ['TypeScript'], tasks: ['Complete TypeScript handbook', 'Convert a JS project to TS'], resources: ['typescriptlang.org', 'TypeScript Deep Dive book'] },
-      { week: 2, title: 'Database & Backend', skills: ['PostgreSQL'], tasks: ['Learn SQL basics', 'Build a CRUD API with PostgreSQL'], resources: ['SQLBolt.com', 'PostgreSQL Tutorial'] },
-      { week: 3, title: 'Cloud & DevOps', skills: ['AWS', 'Docker'], tasks: ['Deploy an app to AWS', 'Dockerize a project'], resources: ['AWS Free Tier', 'Docker Getting Started'] },
-      { week: 4, title: 'CI/CD & System Design', skills: ['CI/CD', 'System Design'], tasks: ['Set up GitHub Actions', 'Study system design patterns'], resources: ['GitHub Actions docs', 'System Design Primer'] },
+      { week: 1, title: 'TypeScript Fundamentals', skills: ['TypeScript'], tasks: ['Complete TypeScript handbook', 'Convert a JS project to TS'], resources: ['typescriptlang.org'] },
+      { week: 2, title: 'Database & Backend', skills: ['PostgreSQL'], tasks: ['Learn SQL basics', 'Build a CRUD API'], resources: ['SQLBolt.com'] },
+      { week: 3, title: 'Cloud & DevOps', skills: ['AWS', 'Docker'], tasks: ['Deploy an app to AWS', 'Dockerize a project'], resources: ['AWS Free Tier'] },
+      { week: 4, title: 'CI/CD & System Design', skills: ['CI/CD', 'System Design'], tasks: ['Set up GitHub Actions', 'Study system design patterns'], resources: ['System Design Primer'] },
     ],
     recommendedCourses: [
       { title: 'Understanding TypeScript', platform: 'Udemy', url: 'https://udemy.com', skill: 'TypeScript' },
@@ -632,12 +609,10 @@ function getMockSkillGap() {
   };
 }
 
-// ─── Portfolio Analyzer (Phase 9) ──────────────────────────────────────────────
+// ─── Portfolio Analyzer ──────────────────────────────────────────────────────────
 
-export async function analyzePortfolioAI(githubData: any): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  const prompt = `You are an expert tech recruiter and senior engineering manager. Review this GitHub profile data and provide a technical assessment of their portfolio.
+export async function analyzePortfolioAI(githubData: any): Promise<IPortfolioAnalysisResult> {
+  const prompt = `You are an expert tech recruiter and senior engineering manager. Review this GitHub profile data and provide a technical assessment.
 
 GitHub Data:
 ${JSON.stringify(githubData, null, 2)}
@@ -649,12 +624,16 @@ Return a valid JSON object (no markdown, no code fences):
   "strengths": ["<strength 1>", "<strength 2>"],
   "weaknesses": ["<weakness 1>", "<weakness 2>"],
   "repoFeedback": [
-    { "repoName": "<repo name>", "feedback": "<1-2 sentences on how to improve this specific repo>" }
+    { "repoName": "<repo name>", "feedback": "<1-2 sentences on how to improve>" }
   ]
 }`;
 
-  if (!apiKey) {
-    return {
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return parseGeminiJSON(responseText);
+    },
+    () => ({
       score: 75,
       overallAdvice: "Good start, but you need more descriptive READMEs and diverse tech stacks.",
       strengths: ["Consistent commits", "Good use of JavaScript"],
@@ -662,22 +641,12 @@ Return a valid JSON object (no markdown, no code fences):
       repoFeedback: [
         { repoName: githubData[0]?.name || 'repo1', feedback: "Add a README explaining how to run the project." }
       ]
-    };
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Portfolio analysis error:', error);
-    return { score: 70, overallAdvice: "Analysis failed, please try again.", strengths: [], weaknesses: [], repoFeedback: [] };
-  }
+    }),
+    'portfolio analysis'
+  );
 }
 
-// ─── Cover Letter Generator (Phase 10) ─────────────────────────────────────────
+// ─── Cover Letter Generator ─────────────────────────────────────────────────────
 
 export async function generateCoverLetterAI(
   resumeContent: string,
@@ -685,8 +654,6 @@ export async function generateCoverLetterAI(
   companyName: string,
   jobTitle: string
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
   const prompt = `You are an expert career coach. Write a highly tailored, professional, and engaging cover letter for a candidate applying for the ${jobTitle} position at ${companyName}.
 
 Candidate's Resume Text:
@@ -696,7 +663,7 @@ Job Description:
 ${jobDescription}
 
 Instructions:
-1. Do NOT include placeholders like [Your Name] or [Date] at the top. Just write the body of the letter (starting with "Dear Hiring Manager," or similar).
+1. Do NOT include placeholders like [Your Name] or [Date]. Just write the body (starting with "Dear Hiring Manager,").
 2. Keep it between 3 to 4 paragraphs.
 3. Highlight the most relevant skills from the resume that match the job description.
 4. Keep the tone professional, enthusiastic, and confident.
@@ -704,18 +671,12 @@ Instructions:
 
 Return ONLY the raw text of the cover letter. No JSON, no markdown, no code fences.`;
 
-  if (!apiKey) {
-    return `Dear Hiring Manager,\n\nI am thrilled to apply for the ${jobTitle} position at ${companyName}. Based on my background in software engineering, I believe I am a strong fit for this role.\n\nThank you for your time.\n\nSincerely,\nA Candidate`;
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    return result.response.text().trim();
-  } catch (error) {
-    console.error('Cover letter generation error:', error);
-    return 'Failed to generate cover letter. Please try again.';
-  }
+  return withAIFallback(
+    async () => {
+      const responseText = await callGemini(prompt);
+      return responseText.trim();
+    },
+    () => `Dear Hiring Manager,\n\nI am thrilled to apply for the ${jobTitle} position at ${companyName}. Based on my background in software engineering, I believe I am a strong fit for this role.\n\nThank you for your time.\n\nSincerely,\nA Candidate`,
+    'cover letter generation'
+  );
 }
-

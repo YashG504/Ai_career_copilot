@@ -77,9 +77,18 @@ export const updateJobStatus = async (req: Request, res: Response): Promise<void
 // @access  Private
 export const updateJob = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Whitelist allowed fields to prevent mass assignment attacks
+    const allowedFields = ['company', 'role', 'location', 'status', 'salary', 'url', 'notes', 'appliedAt'];
+    const updateData: Record<string, any> = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
     const job = await JobApplication.findOneAndUpdate(
       { _id: req.params.id, user: req.user?._id },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 

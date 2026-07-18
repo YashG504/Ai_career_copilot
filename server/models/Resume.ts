@@ -25,6 +25,7 @@ export interface IResume extends Document {
   extractedText: string;
   version: number;
   label: string;
+  filePath?: string;
   analysis?: IResumeAnalysis;
   isAnalyzed: boolean;
   createdAt: Date;
@@ -65,6 +66,7 @@ const resumeSchema = new Schema<IResume>(
     extractedText: { type: String, default: '' },
     version: { type: Number, default: 1 },
     label: { type: String, default: '' },
+    filePath: { type: String },
     analysis: { type: resumeAnalysisSchema },
     isAnalyzed: { type: Boolean, default: false },
   },
@@ -72,6 +74,8 @@ const resumeSchema = new Schema<IResume>(
     timestamps: true,
   }
 );
+
+resumeSchema.index({ user: 1, createdAt: -1 });
 
 const Resume = mongoose.model<IResume>('Resume', resumeSchema);
 export default Resume;

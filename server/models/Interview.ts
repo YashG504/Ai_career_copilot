@@ -106,5 +106,7 @@ const interviewSchema = new Schema<IInterview>(
   { timestamps: true }
 );
 
+interviewSchema.index({ user: 1, createdAt: -1 });
+
 const Interview = mongoose.model<IInterview>('Interview', interviewSchema);
 export default Interview;

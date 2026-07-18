@@ -5,6 +5,7 @@ import Resume from '../models/Resume';
 import JobMatch from '../models/JobMatch';
 import SkillGap from '../models/SkillGap';
 import LearningPath from '../models/LearningPath';
+import { getFromCache, setInCache } from '../utils/cache';
 
 // @desc    Get all analytics data for dashboard
 // @route   GET /api/analytics
@@ -13,8 +14,39 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
   try {
     const userId = req.user?._id;
 
+    const cacheKey = `analytics_${userId}`;
+    const cachedData = getFromCache(cacheKey);
+
+    if (cachedData) {
+      res.status(200).json({ success: true, data: cachedData, cached: true });
+      return;
+    }
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Run all 8 queries in parallel to drastically improve performance
+    const [
+      jobs,
+      recentJobs,
+      interviews,
+      latestResume,
+      matchCount,
+      skillGapCount,
+      learningPathCount,
+      interviewCount
+    ] = await Promise.all([
+      JobApplication.find({ user: userId }),
+      JobApplication.find({ user: userId, createdAt: { $gte: sevenDaysAgo } }),
+      Interview.find({ user: userId, status: 'completed' }).sort({ createdAt: -1 }).limit(10),
+      Resume.findOne({ user: userId }).sort({ createdAt: -1 }),
+      JobMatch.countDocuments({ user: userId }),
+      SkillGap.countDocuments({ user: userId }),
+      LearningPath.countDocuments({ user: userId }),
+      Interview.countDocuments({ user: userId })
+    ]);
+
     // 1. Job Applications Status Counts
-    const jobs = await JobApplication.find({ user: userId });
     const jobStats = {
       applied: 0,
       oa: 0,
@@ -30,9 +62,6 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
     });
 
     // 2. Weekly Job Applications (Last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
     // Create array of last 7 dates
     const weeklyData: Record<string, number> = {};
     for (let i = 6; i >= 0; i--) {
@@ -40,11 +69,6 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
       d.setDate(d.getDate() - i);
       weeklyData[d.toLocaleDateString('en-US', { weekday: 'short' })] = 0;
     }
-
-    const recentJobs = await JobApplication.find({
-      user: userId,
-      createdAt: { $gte: sevenDaysAgo }
-    });
 
     recentJobs.forEach(job => {
       const dayName = job.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
@@ -59,10 +83,6 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
     }));
 
     // 3. Interview Scores
-    const interviews = await Interview.find({ user: userId, status: 'completed' })
-      .sort({ createdAt: -1 })
-      .limit(10);
-    
     let avgInterviewScore = 0;
     let interviewData: any[] = [];
     if (interviews.length > 0) {
@@ -77,14 +97,9 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
     }
 
     // 4. Latest Resume Score
-    const latestResume = await Resume.findOne({ user: userId }).sort({ createdAt: -1 });
     const resumeScore = latestResume?.analysis?.atsScore || 0;
 
     // 5. AI Usage Counts
-    const matchCount = await JobMatch.countDocuments({ user: userId });
-    const skillGapCount = await SkillGap.countDocuments({ user: userId });
-    const learningPathCount = await LearningPath.countDocuments({ user: userId });
-    const interviewCount = await Interview.countDocuments({ user: userId });
     
     const aiUsage = [
       { name: 'Job Matches', value: matchCount },
@@ -93,16 +108,21 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
       { name: 'Learning Paths', value: learningPathCount },
     ];
 
+    const responseData = {
+      jobStats,
+      weeklyApplications,
+      avgInterviewScore,
+      interviewData,
+      resumeScore,
+      aiUsage
+    };
+
+    // Cache the compiled data for 5 minutes (300 seconds)
+    setInCache(cacheKey, responseData, 300);
+
     res.status(200).json({
       success: true,
-      data: {
-        jobStats,
-        weeklyApplications,
-        avgInterviewScore,
-        interviewData,
-        resumeScore,
-        aiUsage
-      }
+      data: responseData
     });
   } catch (error) {
     console.error('Analytics error:', error);

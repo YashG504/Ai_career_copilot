@@ -4,8 +4,16 @@ import path from 'path';
 const pdfParse = require('pdf-parse-new');
 // Use mammoth for DOCX extraction (loaded dynamically to avoid type issues)
 const mammoth: any = require('mammoth');
+// fetch for downloading cloudinary files
+const fetchFn = (global as any).fetch || require('node-fetch');
 import Resume from '../models/Resume';
 import { analyzeResumeWithAI, analyzeResumeWithAIVision, compareResumesWithAI } from '../services/aiService';
+
+/** Sanitize filename to prevent directory traversal attacks */
+function safeFilePath(fileName: string): string {
+  const safeName = path.basename(fileName);
+  return path.join(__dirname, '..', 'uploads', safeName);
+}
 
 // @desc    Upload a resume
 // @route   POST /api/resume/upload
@@ -19,23 +27,41 @@ export const uploadResumeFile = async (req: Request, res: Response): Promise<voi
 
     // Extract text from PDF
     let extractedText = '';
+    const isCloudinary = req.file!.path.startsWith('http');
+    
+    // Helper to get file buffer either from local disk or URL
+    const getFileBuffer = async (): Promise<Buffer> => {
+      if (isCloudinary) {
+        const res = await fetchFn(req.file!.path);
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+      return await fs.promises.readFile(req.file!.path);
+    };
+
     if (req.file.mimetype === 'application/pdf') {
-      const dataBuffer = fs.readFileSync(req.file.path);
+      const dataBuffer = await getFileBuffer();
       const pdfData = await pdfParse(dataBuffer);
       extractedText = pdfData.text;
     } else if (
-      req.file.mimetype ===
+      req.file!.mimetype ===
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      path.extname(req.file.originalname).toLowerCase() === '.docx'
+      path.extname(req.file!.originalname).toLowerCase() === '.docx'
     ) {
       try {
-        const result = await mammoth.extractRawText({ path: req.file.path });
-        extractedText = (result && result.value) ? result.value : '';
+        if (isCloudinary) {
+          const dataBuffer = await getFileBuffer();
+          const result = await mammoth.extractRawText({ buffer: dataBuffer });
+          extractedText = (result && result.value) ? result.value : '';
+        } else {
+          const result = await mammoth.extractRawText({ path: req.file!.path });
+          extractedText = (result && result.value) ? result.value : '';
+        }
       } catch (err) {
         console.warn('DOCX extraction failed:', err);
         extractedText = '';
       }
-    } else if (req.file.mimetype === 'application/msword' || path.extname(req.file.originalname).toLowerCase() === '.doc') {
+    } else if (req.file!.mimetype === 'application/msword' || path.extname(req.file!.originalname).toLowerCase() === '.doc') {
       // Legacy .doc files are not reliably supported here
       res.status(400).json({ success: false, message: 'Legacy .doc files are not supported. Please convert to .docx or PDF and try again.' });
       return;
@@ -48,13 +74,15 @@ export const uploadResumeFile = async (req: Request, res: Response): Promise<voi
 
     const resume = await Resume.create({
       user: req.user?._id,
-      fileName: req.file.filename,
-      originalName: req.file.originalname,
-      fileSize: req.file.size,
-      fileType: req.file.mimetype,
+      fileName: req.file!.filename,
+      originalName: req.file!.originalname,
+      fileSize: req.file!.size,
+      fileType: req.file!.mimetype,
       extractedText,
       version: existingResumes + 1,
       label: req.body.label || `Resume V${existingResumes + 1}`,
+      // Store the path so we know if it's local or cloud
+      filePath: req.file!.path
     });
 
     res.status(201).json({ success: true, data: resume });
@@ -112,13 +140,21 @@ export const downloadResume = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const filePath = path.join(__dirname, '..', 'uploads', resume.fileName);
-    if (!fs.existsSync(filePath)) {
+    // If the file path is a URL (Cloudinary), redirect to it
+    // Note: We'd normally want to cast this or define it in the model, using any for quick access
+    const filePath = (resume as any).filePath;
+    if (filePath && filePath.startsWith('http')) {
+      res.redirect(filePath);
+      return;
+    }
+
+    const localPath = safeFilePath(resume.fileName);
+    if (!fs.existsSync(localPath)) {
       res.status(404).json({ success: false, message: 'File not found on server' });
       return;
     }
 
-    res.download(filePath, resume.originalName);
+    res.download(localPath, resume.originalName);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -139,11 +175,15 @@ export const deleteResume = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Delete file from disk
-    const filePath = path.join(__dirname, '..', 'uploads', resume.fileName);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete file from disk if local
+    const filePath = (resume as any).filePath;
+    if (!filePath || !filePath.startsWith('http')) {
+      const localPath = safeFilePath(resume.fileName);
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+      }
     }
+    // (Optional: Delete from Cloudinary using Cloudinary API if hosted there)
 
     await resume.deleteOne();
 
@@ -172,9 +212,21 @@ export const analyzeResume = async (req: Request, res: Response): Promise<void> 
 
     if (!resume.extractedText || resume.extractedText.length < 50) {
       // If text extraction failed (e.g. image PDF), use Gemini Vision OCR
-      const filePath = path.join(__dirname, '..', 'uploads', resume.fileName);
-      if (fs.existsSync(filePath)) {
-        const fileBuffer = fs.readFileSync(filePath);
+      let fileBuffer: Buffer | null = null;
+      const filePath = (resume as any).filePath;
+      
+      if (filePath && filePath.startsWith('http')) {
+        const resUrl = await fetchFn(filePath);
+        const arrayBuffer = await resUrl.arrayBuffer();
+        fileBuffer = Buffer.from(arrayBuffer);
+      } else {
+        const localPath = safeFilePath(resume.fileName);
+        if (fs.existsSync(localPath)) {
+          fileBuffer = await fs.promises.readFile(localPath);
+        }
+      }
+
+      if (fileBuffer) {
         analysis = await analyzeResumeWithAIVision(fileBuffer, resume.fileType);
       } else {
         res.status(400).json({
